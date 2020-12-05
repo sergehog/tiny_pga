@@ -228,17 +228,65 @@ constexpr Elems multiplication(const Elems elems1, const Elems elems2)
                    (has_e123(elems1) && has_e1(elems2)) || (has_e12(elems1) && has_e31(elems2)) ||
                    (has_e31(elems1) && has_e12(elems2));
 
-  out_elements += scalar ? static_cast<Elems>(BitValues::kScalar) : 0;
-  out_elements += e0 ? static_cast<Elems>(BitValues::kE0) : 0;
-  out_elements += e1 ? static_cast<Elems>(BitValues::kE1) : 0;
-  out_elements += e2 ? static_cast<Elems>(BitValues::kE2) : 0;
-  out_elements += e3 ? static_cast<Elems>(BitValues::kE3) : 0;
-  out_elements += e01 ? static_cast<Elems>(BitValues::kE01) : 0;
-  out_elements += e02 ? static_cast<Elems>(BitValues::kE02) : 0;
-  out_elements += e03 ? static_cast<Elems>(BitValues::kE03) : 0;
-  out_elements += e12 ? static_cast<Elems>(BitValues::kE12) : 0;
-  out_elements += e31 ? static_cast<Elems>(BitValues::kE31) : 0;
-  out_elements += e23 ? static_cast<Elems>(BitValues::kE23) : 0;
+  const bool e021 =
+      (has_scalar(elems1) && has_e021(elems2)) || (has_e021(elems1) && has_scalar(elems2)) ||
+      (has_e0(elems1) && has_e12(elems2)) || (has_e12(elems1) && has_e0(elems2)) ||
+      (has_e1(elems1) && has_e02(elems2)) || (has_e02(elems1) && has_e1(elems2)) ||
+      (has_e2(elems1) && has_e01(elems2)) || (has_e01(elems1) && has_e2(elems2)) ||
+      (has_e3(elems1) && has_e0123(elems2)) || (has_e123(elems1) && has_e3(elems2)) ||
+      (has_e03(elems1) && has_e123(elems2)) || (has_e123(elems1) && has_e03(elems2)) ||
+      (has_e23(elems1) && has_e013(elems2)) || (has_e013(elems1) && has_e23(elems2));
+
+  const bool e013 =
+      (has_scalar(elems1) && has_e013(elems2)) || (has_e013(elems1) && has_scalar(elems2)) ||
+      (has_e0(elems1) && has_e31(elems2)) || (has_e31(elems1) && has_e0(elems2)) ||
+      (has_e1(elems1) && has_e03(elems2)) || (has_e03(elems1) && has_e1(elems2)) ||
+      (has_e3(elems1) && has_e01(elems2)) || (has_e01(elems1) && has_e3(elems2)) ||
+      (has_e2(elems1) && has_e0123(elems2)) || (has_e123(elems1) && has_e2(elems2)) ||
+      (has_e02(elems1) && has_e123(elems2)) || (has_e123(elems1) && has_e02(elems2)) ||
+      (has_e23(elems1) && has_e021(elems2)) || (has_e021(elems1) && has_e23(elems2));
+
+  const bool e032 =
+      (has_scalar(elems1) && has_e032(elems2)) || (has_e032(elems1) && has_scalar(elems2)) ||
+      (has_e0(elems1) && has_e23(elems2)) || (has_e23(elems1) && has_e0(elems2)) ||
+      (has_e2(elems1) && has_e03(elems2)) || (has_e03(elems1) && has_e2(elems2)) ||
+      (has_e3(elems1) && has_e02(elems2)) || (has_e02(elems1) && has_e3(elems2)) ||
+      (has_e1(elems1) && has_e0123(elems2)) || (has_e123(elems1) && has_e1(elems2)) ||
+      (has_e01(elems1) && has_e123(elems2)) || (has_e123(elems1) && has_e01(elems2)) ||
+      (has_e31(elems1) && has_e021(elems2)) || (has_e021(elems1) && has_e31(elems2));
+
+  const bool e123 = (has_scalar(elems1) && has_e123(elems2)) ||
+                    (has_e123(elems1) && has_scalar(elems2)) ||
+                    (has_e1(elems1) && has_e23(elems2)) || (has_e23(elems1) && has_e1(elems2)) ||
+                    (has_e2(elems1) && has_e31(elems2)) || (has_e31(elems1) && has_e2(elems2)) ||
+                    (has_e3(elems1) && has_e12(elems2)) || (has_e12(elems1) && has_e3(elems2));
+
+  const bool e0123 =
+      (has_scalar(elems1) && has_e0123(elems2)) || (has_e0123(elems1) && has_scalar(elems2)) ||
+      (has_e0(elems1) && has_e123(elems2)) || (has_e123(elems1) && has_e0(elems2)) ||
+      (has_e1(elems1) && has_e032(elems2)) || (has_e032(elems1) && has_e1(elems2)) ||
+      (has_e2(elems1) && has_e013(elems2)) || (has_e013(elems1) && has_e02(elems2)) ||
+      (has_e3(elems1) && has_e021(elems2)) || (has_e021(elems1) && has_e3(elems2)) ||
+      (has_e01(elems1) && has_e23(elems2)) || (has_e23(elems1) && has_e01(elems2)) ||
+      (has_e02(elems1) && has_e31(elems2)) || (has_e31(elems1) && has_e02(elems2)) ||
+      (has_e03(elems1) && has_e12(elems2)) || (has_e12(elems1) && has_e03(elems2));
+
+  out_elements |= scalar ? static_cast<Elems>(BitValues::kScalar) : 0;
+  out_elements |= e0 ? static_cast<Elems>(BitValues::kE0) : 0;
+  out_elements |= e1 ? static_cast<Elems>(BitValues::kE1) : 0;
+  out_elements |= e2 ? static_cast<Elems>(BitValues::kE2) : 0;
+  out_elements |= e3 ? static_cast<Elems>(BitValues::kE3) : 0;
+  out_elements |= e01 ? static_cast<Elems>(BitValues::kE01) : 0;
+  out_elements |= e02 ? static_cast<Elems>(BitValues::kE02) : 0;
+  out_elements |= e03 ? static_cast<Elems>(BitValues::kE03) : 0;
+  out_elements |= e12 ? static_cast<Elems>(BitValues::kE12) : 0;
+  out_elements |= e31 ? static_cast<Elems>(BitValues::kE31) : 0;
+  out_elements |= e23 ? static_cast<Elems>(BitValues::kE23) : 0;
+  out_elements |= e021 ? static_cast<Elems>(BitValues::kE021) : 0;
+  out_elements |= e013 ? static_cast<Elems>(BitValues::kE013) : 0;
+  out_elements |= e032 ? static_cast<Elems>(BitValues::kE032) : 0;
+  out_elements |= e123 ? static_cast<Elems>(BitValues::kE123) : 0;
+  out_elements |= e0123 ? static_cast<Elems>(BitValues::kE0123) : 0;
 
   return out_elements;
 }
