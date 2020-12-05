@@ -510,7 +510,7 @@ template <Elems elements> struct Multivector
 
       if (elems::has_e1(elements) && elems::has_e01(other_elements))
       {
-        out.e0() += e1() * other.e01();
+        out.e0() -= e1() * other.e01();
       }
 
       if (elems::has_e01(elements) && elems::has_e1(other_elements))
@@ -520,7 +520,7 @@ template <Elems elements> struct Multivector
 
       if (elems::has_e2(elements) && elems::has_e02(other_elements))
       {
-        out.e0() += e2() * other.e02();
+        out.e0() -= e2() * other.e02();
       }
 
       if (elems::has_e02(elements) && elems::has_e2(other_elements))
@@ -530,12 +530,17 @@ template <Elems elements> struct Multivector
 
       if (elems::has_e3(elements) && elems::has_e03(other_elements))
       {
-        out.e0() += e3() * other.e03();
+        out.e0() -= e3() * other.e03();
       }
 
       if (elems::has_e03(elements) && elems::has_e3(other_elements))
       {
         out.e0() += e03() * other.e3();
+      }
+
+      if (elems::has_e021(elements) && elems::has_e12(other_elements))
+      {
+        out.e0() += e021() * other.e12();
       }
 
       if (elems::has_e12(elements) && elems::has_e021(other_elements))
@@ -551,11 +556,6 @@ template <Elems elements> struct Multivector
       if (elems::has_e23(elements) && elems::has_e032(other_elements))
       {
         out.e0() += e23() * other.e032();
-      }
-
-      if (elems::has_e021(elements) && elems::has_e12(other_elements))
-      {
-        out.e0() += e021() * other.e12();
       }
 
       if (elems::has_e013(elements) && elems::has_e31(other_elements))
