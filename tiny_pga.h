@@ -1,9 +1,9 @@
 //
-// C++ Implementation of Projectove Geometric Algebra (a.k.a Plane-based Geometric Algebra)
+// C++ Implementation of 3D Projectove Geometric Algebra (a.k.a Plane-based Geometric Algebra)
 // Highly-templatized implementation helps with number of issues:
 // * reducing computational complexity of PGA operators via compile-time optimizations
-// * optimizing memory footprint
-// * checking correctness of multivector assignments / blades matching
+// * reducing memory footprint
+// * compile-time checks for assignments correctness / blade matching (to some extent)
 //
 // Created by Sergey Smirnov on 5.12.2020.
 // Email: sergei.smirnov@gmail.com
@@ -20,30 +20,35 @@
 namespace tiny_pga
 {
 
-/// Bitmap for storing presence of multivector elements
+/// Bitmap of the presence of elements in the multivector
 using Elems = std::uint16_t;
 
 namespace elems
 {
 
+/// Elements are enumerated not in the logical order, but rather in the order they appear in the memory
 enum class BitValues : Elems
 {
-  kScalar = (1U << 0),
-  kE0 = (1U << 1),
-  kE1 = (1U << 2),
-  kE2 = (1U << 3),
-  kE3 = (1U << 4),
-  kE01 = (1U << 5),
-  kE02 = (1U << 6),
-  kE03 = (1U << 7),
-  kE12 = (1U << 8),
-  kE31 = (1U << 9),
-  kE23 = (1U << 10),
-  kE021 = (1U << 11),
-  kE013 = (1U << 12),
-  kE032 = (1U << 13),
-  kE123 = (1U << 14),
-  kE0123 = (1U << 15)
+  // Vector
+  kE0 = (1U << 0),
+  kE1 = (1U << 1),
+  kE2 = (1U << 2),
+  kE3 = (1U << 3),
+  // BivectorE
+  kScalar = (1U << 4),
+  kE12 = (1U << 5),
+  kE31 = (1U << 6),
+  kE23 = (1U << 7),
+  //Bivector0
+  kE01 = (1U << 8),
+  kE02 = (1U << 9),
+  kE03 = (1U << 10),
+  kE0123 = (1U << 11),
+  //Trivector
+  kE021 = (1U << 12),
+  kE013 = (1U << 13),
+  kE032 = (1U << 14),
+  kE123 = (1U << 15),
 };
 
 constexpr bool has_scalar(const Elems elem)
@@ -310,9 +315,9 @@ constexpr Elems RotorElems =
     static_cast<Elems>(elems::BitValues::kScalar) | static_cast<Elems>(elems::BitValues::kE23) |
     static_cast<Elems>(elems::BitValues::kE31) | static_cast<Elems>(elems::BitValues::kE12);
 
-constexpr Elems TranslatorElems = static_cast<Elems>(elems::BitValues::kE01) |
-                                  static_cast<Elems>(elems::BitValues::kE02) |
-                                  static_cast<Elems>(elems::BitValues::kE03);
+constexpr Elems TranslatorElems =
+    static_cast<Elems>(elems::BitValues::kE01) | static_cast<Elems>(elems::BitValues::kE02) |
+    static_cast<Elems>(elems::BitValues::kE03) | static_cast<Elems>(elems::BitValues::kScalar);
 
 constexpr Elems MotorElems =
     static_cast<Elems>(elems::BitValues::kScalar) | static_cast<Elems>(elems::BitValues::kE23) |
@@ -322,45 +327,108 @@ constexpr Elems MotorElems =
 
 } // namespace elems
 
-template <Elems elements, typename type=float> struct Multivector
+
+/// Compile-time optimized (using templating) implementation of 3D PGA Multivector
+template <Elems elements, typename FieldType=float> struct Multivector;
+using Plane = Multivector<elems::PlaneElems>;
+using Line = Multivector<elems::LineElems>;
+using Point = Multivector<elems::PointElems>;
+using Rotor = Multivector<elems::RotorElems>;
+using Translator = Multivector<elems::TranslatorElems>;
+using Motor = Multivector<elems::MotorElems>;
+
+
+template <Elems elements, typename ElemType> struct Multivector
 {
 
   template <bool Condition, typename T> struct Conditional  {T value;};
   template <typename T> struct Conditional<false, T> {};
 
   // Optimization of Memory Footprint with use of conditional elements
-  Conditional<elems::has_vector(elements), std::array<type, 4U>> Vector;
-  Conditional<elems::has_bivectorE(elements), std::array<type, 4U>> BivectorE;
-  Conditional<elems::has_bivector0(elements), std::array<type, 4U>> Bivector0;
-  Conditional<elems::has_trivector(elements), std::array<type, 4U>> Trivector;
+  Conditional<elems::has_vector(elements), std::array<ElemType, 4U>> Vector;
+  Conditional<elems::has_bivectorE(elements), std::array<ElemType, 4U>> BivectorE;
+  Conditional<elems::has_bivector0(elements), std::array<ElemType, 4U>> Bivector0;
+  Conditional<elems::has_trivector(elements), std::array<ElemType, 4U>> Trivector;
 
-  static const Elems Elements = elements;
+  /// Exposing elements outside, as static const value
+  static constexpr Elems Elements = elements;
+
+  /// Templated (compile-time) getter/setter for obtaining individual elements
+  ///
+//  template<elems::BitValues elem> ElemType& value()
+//  {
+//    if(bool(elements & static_cast<Elems>(elem)))
+//    {
+//      switch(static_cast<Elems>(elem) / 4)
+//      {
+//        case 0U:
+//          return Vector[static_cast<Elems>(elem) % 4];
+//        case 1U:
+//          return BivectorE[static_cast<Elems>(elem) % 4];
+//        case 2U:
+//          return Bivector0[static_cast<Elems>(elem) % 4];
+//        default:
+//          return Trivector[static_cast<Elems>(elem) % 4];
+//      }
+//    }
+//    else
+//    {
+//      // This shall never happen
+//      throw std::exception();
+//      static ElemType stub_element {};
+//      return stub_element;
+//    }
+//  }
+//
+//  template<elems::BitValues elem> ElemType value() const
+//  {
+//    if(bool(elements & static_cast<Elems>(elem)))
+//    {
+//      switch(static_cast<Elems>(elem) / 4)
+//      {
+//        case 0U:
+//          return Vector[static_cast<Elems>(elem) % 4];
+//        case 1U:
+//          return BivectorE[static_cast<Elems>(elem) % 4];
+//        case 2U:
+//          return Bivector0[static_cast<Elems>(elem) % 4];
+//        default:
+//          return Trivector[static_cast<Elems>(elem) % 4];
+//      }
+//    }
+//    else
+//    {
+//      // This shall never happen
+//      throw std::exception();
+//      static ElemType stub_element {};
+//      return stub_element;
+//    }
+//  }
 
   // In this macro we define setter and read-only getter functions,
   // as well as define private stub function, in case if element does not exist
 #define ELEM_FUNCTION(element_name, array_position) \
- public: \
-  template <typename T = type>\
+  template <typename T = ElemType>\
   typename std::enable_if<elems:: has_##element_name(elements), T>::type& element_name()\
   {\
     return array_position;\
   };\
-  template <typename T = type> \
+  template <typename T = ElemType> \
   typename std::enable_if<elems::has_##element_name(elements), T>::type element_name() const \
   {\
     return array_position;\
   }\
-  private: \
-  template <typename T = type> \
+  template <typename T = ElemType> \
   typename std::enable_if<!elems::has_##element_name(elements), T>::type& element_name()  \
   {\
     return stub_element;\
   }\
-  template <typename T = type> \
+  template <typename T = ElemType> \
   typename std::enable_if<!elems::has_##element_name(elements), T>::type element_name() const \
   {\
     return 0.;\
   }\
+
 
   ELEM_FUNCTION(e0, Vector.value[0]);
   ELEM_FUNCTION(e1, Vector.value[1]);
@@ -381,173 +449,201 @@ template <Elems elements, typename type=float> struct Multivector
   ELEM_FUNCTION(e013, Trivector.value[1]);
   ELEM_FUNCTION(e032, Trivector.value[2]);
   ELEM_FUNCTION(e123, Trivector.value[3]);
- private:
-  type stub_element;
- public:
-
-#undef DEFINE_ELEM_FUNCTION
+ #undef DEFINE_ELEM_FUNCTION
 
   template <class T = Multivector<elems::RotorElems>>
   typename std::enable_if<elems::has_bivectorE(elements), T>::type rotor()
   {
-    return Multivector<elems::RotorElems>{BivectorE.value};
+    return Rotor {BivectorE.value};
   }
 
   template <class T = Multivector<elems::TranslatorElems>>
   typename std::enable_if<elems::has_bivector0(elements), T>::type translator()
   {
-    return Multivector<elems::TranslatorElems> {Bivector0.value};
+    return Translator {Bivector0.value};
   }
 
   template <class T = Multivector<elems::MotorElems>>
   typename std::enable_if<elems::has_bivector0(elements), T>::type motor()
   {
-    return Multivector<elems::MotorElems> {BivectorE.value, Bivector0.value};
+    return Motor {BivectorE.value, Bivector0.value};
   }
 
+  /// Generic multiplication operator
+  /// When using it, elements of resulting multivector (i.e. Blades) might grow, even though their real values remain zeros
+  /// Consider casting result back to desired type in order to keep compile-time constraints active
   template <Elems other_elements>
   Multivector<elems::multiplication(elements, other_elements)> operator*(
-      const Multivector<other_elements> &other)
+      const Multivector<other_elements> &other) const
   {
     constexpr Elems out_elems = elems::multiplication(elements, other_elements);
-    Multivector<elems::multiplication(elements, other_elements)> out{};
+    Multivector<out_elems> out{};
+
+#define ELEM_MULTIPLY(elem_out, elem1, elem2, sign1) \
+if(elems::has_##elem1(elements) && elems::has_##elem2(other_elements)) {\
+  out.elem_out() sign1 elem1() * other.elem2();\
+}
+
+
+#define ELEM_BOTH_MULTIPLY(elem_out, elem1, elem2, sign1, sign2) \
+if(elems::has_##elem1(elements) && elems::has_##elem2(other_elements)) {\
+  out.elem_out() sign1 elem1() * other.elem2();\
+}\
+if(elems::has_##elem2(elements) && elems::has_##elem1(other_elements)) {\
+  out.elem_out() sign2 elem2() * other.elem1();\
+}\
+
+//    if (elems::has_scalar(out_elems))
+//    {
+//      if(elems::has_scalar(elements) && elems::has_scalar(other_elements))
+//      {
+//        out.value<elems::BitValues::kScalar>() += 1.F;
+//      }
+//    }
 
     if (elems::has_scalar(out_elems))
     {
-      if (elems::has_scalar(elements) && elems::has_scalar(other_elements))
-      {
-        out.scalar() += scalar() * other.scalar();
-      }
-
-      if (elems::has_e1(elements) && !elems::has_e1(other_elements))
-      {
-        out.scalar() += e1() * other.e1();
-      }
-
-      if (elems::has_e2(elements) && elems::has_e2(other_elements))
-      {
-        out.scalar() += e2() * other.e2();
-      }
-
-      if (elems::has_e3(elements) && elems::has_e3(other_elements))
-      {
-        out.scalar() += e3() * other.e3();
-      }
-
-      if (elems::has_e12(elements) && elems::has_e12(other_elements))
-      {
-        out.scalar() -= e12() * other.e12();
-      }
-
-      if (elems::has_e31(elements) && elems::has_e31(other_elements))
-      {
-        out.scalar() -= e31() * other.e31();
-      }
-
-      if (elems::has_e23(elements) && elems::has_e23(other_elements))
-      {
-        out.scalar() -= e23() * other.e23();
-      }
-
-      if (elems::has_e123(elements) && elems::has_e123(other_elements))
-      {
-        out.scalar() -= e123() * other.e123();
-      }
+      ELEM_MULTIPLY(scalar, scalar, scalar, +=);
+      ELEM_MULTIPLY(scalar, e1, e1, +=);
+      ELEM_MULTIPLY(scalar, e2, e2, +=);
+      ELEM_MULTIPLY(scalar, e3, e3, +=);
+      ELEM_MULTIPLY(scalar, e12, e12, -=);
+      ELEM_MULTIPLY(scalar, e31, e31, -=);
+      ELEM_MULTIPLY(scalar, e23, e23, -=);
+      ELEM_MULTIPLY(scalar, e123, e123, -=);
     }
 
     if (elems::has_e0(out_elems))
     {
-      if (elems::has_scalar(elements) && elems::has_e0(other_elements))
-      {
-        out.e0() += scalar() * other.e0();
-      }
+      ELEM_BOTH_MULTIPLY(e0, scalar, e0, +=, +=);
+      ELEM_BOTH_MULTIPLY(e0, e1, e01, -=, +=);
+      ELEM_BOTH_MULTIPLY(e0, e2, e02, -=, +=);
+      ELEM_BOTH_MULTIPLY(e0, e3, e03, -=, +=);
+      ELEM_BOTH_MULTIPLY(e0, e12, e021, +=, +=);
+      ELEM_BOTH_MULTIPLY(e0, e31, e013, +=, +=);
+      ELEM_BOTH_MULTIPLY(e0, e23, e032, +=, +=);
+      ELEM_BOTH_MULTIPLY(e0, e123, e0123, +=, -=);
+    }
 
-      if (elems::has_e0(elements) && elems::has_scalar(other_elements))
-      {
-        out.e0() += e0() * other.scalar();
-      }
+    if (elems::has_e1(out_elems))
+    {
+      ELEM_BOTH_MULTIPLY(e1, scalar, e1, +=, +=);
+      ELEM_BOTH_MULTIPLY(e1, e2, e12, -=, +=);
+      ELEM_BOTH_MULTIPLY(e1, e3, e31, +=, -=);
+      ELEM_BOTH_MULTIPLY(e1, e23, e123, -=, -=);
+    }
 
-      if (elems::has_e1(elements) && elems::has_e01(other_elements))
-      {
-        out.e0() -= e1() * other.e01();
-      }
+    if (elems::has_e2(out_elems))
+    {
+      ELEM_BOTH_MULTIPLY(e2, scalar, e2, +=, +=);
+      ELEM_BOTH_MULTIPLY(e2, e1, e12, +=, -=);
+      ELEM_BOTH_MULTIPLY(e2, e3, e23, -=, +=);
+      ELEM_BOTH_MULTIPLY(e2, e31, e123, -=, -=);
+    }
 
-      if (elems::has_e01(elements) && elems::has_e1(other_elements))
-      {
-        out.e0() += e01() * other.e1();
-      }
+    if (elems::has_e3(out_elems))
+    {
+      ELEM_BOTH_MULTIPLY(e3, scalar, e3, +=, +=);
+      ELEM_BOTH_MULTIPLY(e3, e1, e31, -=, +=);
+      ELEM_BOTH_MULTIPLY(e3, e2, e23, +=, -=);
+      ELEM_BOTH_MULTIPLY(e3, e12, e123, -=, -=);
+    }
 
-      if (elems::has_e2(elements) && elems::has_e02(other_elements))
-      {
-        out.e0() -= e2() * other.e02();
-      }
+    if (elems::has_e01(out_elems))
+    {
+      ELEM_BOTH_MULTIPLY(e01, scalar, e01, +=, +=);
+      ELEM_BOTH_MULTIPLY(e01, e0, e1, +=, -=);
+      ELEM_BOTH_MULTIPLY(e01, e2, e021, -=, -=);
+      ELEM_BOTH_MULTIPLY(e01, e3, e013, +=, +=);
+      ELEM_BOTH_MULTIPLY(e01, e02, e12, -=, +=);
+      ELEM_BOTH_MULTIPLY(e01, e03, e31, +=, -=);
+      ELEM_BOTH_MULTIPLY(e01, e032, e123, +=, -=);
+    }
 
-      if (elems::has_e02(elements) && elems::has_e2(other_elements))
-      {
-        out.e0() += e02() * other.e2();
-      }
+    if (elems::has_e02(out_elems))
+    {
+      ELEM_BOTH_MULTIPLY(e02, scalar, e02, +=, +=);
+      ELEM_BOTH_MULTIPLY(e02, e0, e2, +=, -=);
+      ELEM_BOTH_MULTIPLY(e02, e1, e021, +=, +=);
+      ELEM_BOTH_MULTIPLY(e02, e3, e032, -=, -=);
+      ELEM_BOTH_MULTIPLY(e02, e01, e12, +=, -=);
+      ELEM_BOTH_MULTIPLY(e02, e03, e23, -=, +=);
+      ELEM_BOTH_MULTIPLY(e02, e013, e123, +=, -=);
+    }
 
-      if (elems::has_e3(elements) && elems::has_e03(other_elements))
-      {
-        out.e0() -= e3() * other.e03();
-      }
-
-      if (elems::has_e03(elements) && elems::has_e3(other_elements))
-      {
-        out.e0() += e03() * other.e3();
-      }
-
-      if (elems::has_e021(elements) && elems::has_e12(other_elements))
-      {
-        out.e0() += e021() * other.e12();
-      }
-
-      if (elems::has_e12(elements) && elems::has_e021(other_elements))
-      {
-        out.e0() += e12() * other.e021();
-      }
-
-      if (elems::has_e31(elements) && elems::has_e013(other_elements))
-      {
-        out.e0() += e31() * other.e013();
-      }
-
-      if (elems::has_e23(elements) && elems::has_e032(other_elements))
-      {
-        out.e0() += e23() * other.e032();
-      }
-
-      if (elems::has_e013(elements) && elems::has_e31(other_elements))
-      {
-        out.e0() += e013() * other.e31();
-      }
-
-      if (elems::has_e032(elements) && elems::has_e23(other_elements))
-      {
-        out.e0() += e032() * other.e23();
-      }
-
-      if (elems::has_e123(elements) && elems::has_e0123(other_elements))
-      {
-        out.e0() += e123() * other.e0123();
-      }
-
-      if (elems::has_e0123(elements) && elems::has_e123(other_elements))
-      {
-        out.e0() += e0123() * other.e123();
-      }
+    if (elems::has_e03(out_elems))
+    {
+      ELEM_BOTH_MULTIPLY(e03, scalar, e03, +=, +=);
+      ELEM_BOTH_MULTIPLY(e03, e0, e3, +=, -=);
+      ELEM_BOTH_MULTIPLY(e03, e1, e013, -=, -=);
+      ELEM_BOTH_MULTIPLY(e03, e2, e032, +=, +=);
+      ELEM_BOTH_MULTIPLY(e03, e01, e31, -=, +=);
+      ELEM_BOTH_MULTIPLY(e03, e02, e23, +=, -=);
+      ELEM_BOTH_MULTIPLY(e03, e021, e123, +=, -=);
     }
 
     return out;
   }
+
+  Multivector<elements> operator~() const
+  {
+    Multivector<elements> out{};
+    return out;
+  }
+
+  Multivector<elements> sandwich(const Motor& motor) const
+  {
+    Multivector<elements> out;
+    return out;
+  }
+
+  /// Converts whatever it's now to a plane
+  explicit operator Plane() const
+  {
+    Plane plane{};
+    if(elems::has_e0(elements))
+    {
+      plane.e0() = e0();
+    }
+    if(elems::has_e1(elements))
+    {
+      plane.e1() = e1();
+    }
+    if(elems::has_e2(elements))
+    {
+      plane.e2() = e2();
+    }
+    if(elems::has_e3(elements))
+    {
+      plane.e3() = e3();
+    }
+    return plane;
+  }
+
+  /// Converts whatever it's now to a point
+  explicit operator Point() const
+  {
+    Point point{};
+    if(elems::has_e021(elements))
+    {
+      point.e021() = e021();
+    }
+    if(elems::has_e013(elements))
+    {
+      point.e013() = e013();
+    }
+    if(elems::has_e032(elements))
+    {
+      point.e032() = e032();
+    }
+    point.e123() = 1.F;
+    return point;
+  }
+
+  ElemType stub_element = 0;
 };
 
-using Plane = Multivector<elems::PlaneElems>;
-using Line = Multivector<elems::LineElems>;
-using Point = Multivector<elems::PointElems>;
-using Rotor = Multivector<elems::RotorElems>;
-using Translator = Multivector<elems::TranslatorElems>;
-using Motor = Multivector<elems::MotorElems>;
+
 
 } // namespace tiny_pga
 
