@@ -28,21 +28,10 @@ TEST(BasicTest, MultiplicationElementsTest)
   Multivector<elem> mv2 {};
   Elems new_elem = elems::multiplication(elem, elem);
   EXPECT_EQ(new_elem, elem);
-  Multivector<elems::multiplication(elem, elem)> mv3;
-  mv3 = mv1 * mv2;
-
-  //auto mv3 = mv1 * mv2;
-  //EXPECT_NO_THROW(mv3.scalar());
+  auto mv3 = mv1 * mv2;
+  EXPECT_NO_THROW(mv3.scalar());
+  mv3.scalar() = 1.F;
+  EXPECT_EQ(mv3.scalar(), 1.F);
+  mv3.scalar() = 2.F;
+  EXPECT_EQ(mv3.scalar(), 2.F);
 }
-/*
-
-TEST(BasicTest, MultiplicationTest)
-{
-  tiny_pga::Plane plane{1.f, 2.f, 3.f, 4.f};
-
-  tiny_pga::Point point{{}, {}, {}, 1.f, 2.f, 3.f, 0.F};
-
-
-
-}
-*/

@@ -322,63 +322,70 @@ constexpr Elems MotorElems =
 
 } // namespace elems
 
-template <Elems elements> struct Multivector
+template <Elems elements, typename type=float> struct Multivector
 {
 
   template <bool Condition, typename T> struct Conditional  {T value;};
   template <typename T> struct Conditional<false, T> {};
 
   // Optimization of Memory Footprint with use of conditional elements
-  Conditional<elems::has_vector(elements), std::array<float, 4U>> Vector;
-  Conditional<elems::has_bivectorE(elements), std::array<float, 4U>> BivectorE;
-  Conditional<elems::has_bivector0(elements), std::array<float, 4U>> Bivector0;
-  Conditional<elems::has_trivector(elements), std::array<float, 4U>> Trivector;
+  Conditional<elems::has_vector(elements), std::array<type, 4U>> Vector;
+  Conditional<elems::has_bivectorE(elements), std::array<type, 4U>> BivectorE;
+  Conditional<elems::has_bivector0(elements), std::array<type, 4U>> Bivector0;
+  Conditional<elems::has_trivector(elements), std::array<type, 4U>> Trivector;
 
   static const Elems Elements = elements;
 
   // In this macro we define setter and read-only getter functions,
   // as well as define private stub function, in case if element does not exist
-#define DEFINE_ELEM_FUNCTION(element_name, array_position) \
+#define ELEM_FUNCTION(element_name, array_position) \
  public: \
-  template <typename T = float>\
+  template <typename T = type>\
   typename std::enable_if<elems:: has_##element_name(elements), T>::type& element_name()\
   {\
     return array_position;\
   };\
-  template <typename T = float> \
+  template <typename T = type> \
   typename std::enable_if<elems::has_##element_name(elements), T>::type element_name() const \
   {\
     return array_position;\
   }\
   private: \
-  template <typename T = float> \
+  template <typename T = type> \
+  typename std::enable_if<!elems::has_##element_name(elements), T>::type& element_name()  \
+  {\
+    return stub_element;\
+  }\
+  template <typename T = type> \
   typename std::enable_if<!elems::has_##element_name(elements), T>::type element_name() const \
   {\
-    return 0.F;\
+    return 0.;\
   }\
- public:\
 
+  ELEM_FUNCTION(e0, Vector.value[0]);
+  ELEM_FUNCTION(e1, Vector.value[1]);
+  ELEM_FUNCTION(e2, Vector.value[2]);
+  ELEM_FUNCTION(e3, Vector.value[3]);
 
-  DEFINE_ELEM_FUNCTION(e0, Vector.value[0]);
-  DEFINE_ELEM_FUNCTION(e1, Vector.value[1]);
-  DEFINE_ELEM_FUNCTION(e2, Vector.value[2]);
-  DEFINE_ELEM_FUNCTION(e3, Vector.value[3]);
+  ELEM_FUNCTION(e01, Bivector0.value[0]);
+  ELEM_FUNCTION(e02, Bivector0.value[1]);
+  ELEM_FUNCTION(e03, Bivector0.value[2]);
+  ELEM_FUNCTION(e0123, Bivector0.value[3]);
 
-  DEFINE_ELEM_FUNCTION(e01, Bivector0.value[0]);
-  DEFINE_ELEM_FUNCTION(e02, Bivector0.value[1]);
-  DEFINE_ELEM_FUNCTION(e03, Bivector0.value[2]);
-  DEFINE_ELEM_FUNCTION(e0123, Bivector0.value[3]);
+  ELEM_FUNCTION(scalar, BivectorE.value[0]);
+  ELEM_FUNCTION(e12, BivectorE.value[1]);
+  ELEM_FUNCTION(e31, BivectorE.value[2]);
+  ELEM_FUNCTION(e23, BivectorE.value[3]);
 
-  DEFINE_ELEM_FUNCTION(scalar, BivectorE.value[0]);
-  DEFINE_ELEM_FUNCTION(e12, BivectorE.value[1]);
-  DEFINE_ELEM_FUNCTION(e31, BivectorE.value[2]);
-  DEFINE_ELEM_FUNCTION(e23, BivectorE.value[3]);
+  ELEM_FUNCTION(e021, Trivector.value[0]);
+  ELEM_FUNCTION(e013, Trivector.value[1]);
+  ELEM_FUNCTION(e032, Trivector.value[2]);
+  ELEM_FUNCTION(e123, Trivector.value[3]);
+ private:
+  type stub_element;
+ public:
 
-  DEFINE_ELEM_FUNCTION(e021, Trivector.value[0]);
-  DEFINE_ELEM_FUNCTION(e013, Trivector.value[1]);
-  DEFINE_ELEM_FUNCTION(e032, Trivector.value[2]);
-  DEFINE_ELEM_FUNCTION(e123, Trivector.value[3]);
-
+#undef DEFINE_ELEM_FUNCTION
 
   template <class T = Multivector<elems::RotorElems>>
   typename std::enable_if<elems::has_bivectorE(elements), T>::type rotor()
@@ -419,32 +426,32 @@ template <Elems elements> struct Multivector
 
       if (elems::has_e2(elements) && elems::has_e2(other_elements))
       {
-        out.scalar() += static_cast<float>(e2()) * static_cast<float>(other.e2());
+        out.scalar() += e2() * other.e2();
       }
 
       if (elems::has_e3(elements) && elems::has_e3(other_elements))
       {
-        out.scalar() += static_cast<float>(e3()) * static_cast<float>(other.e3());
+        out.scalar() += e3() * other.e3();
       }
 
       if (elems::has_e12(elements) && elems::has_e12(other_elements))
       {
-        out.scalar() -= static_cast<float>(e12()) * static_cast<float>(other.e12());
+        out.scalar() -= e12() * other.e12();
       }
 
       if (elems::has_e31(elements) && elems::has_e31(other_elements))
       {
-        out.scalar() -= static_cast<float>(e31()) * static_cast<float>(other.e31());
+        out.scalar() -= e31() * other.e31();
       }
 
       if (elems::has_e23(elements) && elems::has_e23(other_elements))
       {
-        out.scalar() -= static_cast<float>(e23()) * static_cast<float>(other.e23());
+        out.scalar() -= e23() * other.e23();
       }
 
       if (elems::has_e123(elements) && elems::has_e123(other_elements))
       {
-        out.scalar() -= static_cast<float>(e123()) * static_cast<float>(other.e123());
+        out.scalar() -= e123() * other.e123();
       }
     }
 
@@ -522,12 +529,12 @@ template <Elems elements> struct Multivector
 
       if (elems::has_e123(elements) && elems::has_e0123(other_elements))
       {
-        out.e0() += e123() * other.pseudo();
+        out.e0() += e123() * other.e0123();
       }
 
       if (elems::has_e0123(elements) && elems::has_e123(other_elements))
       {
-        out.e0() += e01234() * other.e123();
+        out.e0() += e0123() * other.e123();
       }
     }
 
