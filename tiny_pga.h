@@ -588,6 +588,81 @@ template <Elems elements, typename ElemType> struct Multivector
       ELEM_BOTH_MULTIPLY(e03, e021, e123, +=, -=);
     }
 
+    if (elems::has_e12(out_elems))
+    {
+      ELEM_BOTH_MULTIPLY(e12, scalar, e12, +=, +=);
+      ELEM_BOTH_MULTIPLY(e12, e1, e2, +=, -=);
+      ELEM_BOTH_MULTIPLY(e12, e3, e123, +=, +=);
+      ELEM_BOTH_MULTIPLY(e12, e31, e23, +=, -=);
+    }
+
+    if (elems::has_e31(out_elems))
+    {
+      ELEM_BOTH_MULTIPLY(e31, scalar, e31, +=, +=);
+      ELEM_BOTH_MULTIPLY(e31, e3, e1, +=, -=);
+      ELEM_BOTH_MULTIPLY(e31, e2, e123, +=, +=);
+      ELEM_BOTH_MULTIPLY(e31, e12, e23, -=, +=);
+    }
+
+    if (elems::has_e23(out_elems))
+    {
+      ELEM_BOTH_MULTIPLY(e23, scalar, e23, +=, +=);
+      ELEM_BOTH_MULTIPLY(e23, e2, e3, +=, -=);
+      ELEM_BOTH_MULTIPLY(e23, e1, e123, +=, +=);
+      ELEM_BOTH_MULTIPLY(e23, e12, e31, +=, -=);
+    }
+
+    if (elems::has_e021(out_elems))
+    {
+      ELEM_BOTH_MULTIPLY(e021, scalar, e021, +=, +=);
+      ELEM_BOTH_MULTIPLY(e021, e0, e12, +=, -=);
+      ELEM_BOTH_MULTIPLY(e021, e1, e02, +=, +=);
+      ELEM_BOTH_MULTIPLY(e021, e2, e01, -=, -=);
+      ELEM_BOTH_MULTIPLY(e021, e3, e0123, +=, -=);
+      ELEM_BOTH_MULTIPLY(e021, e03, e123, +=, -=);
+      ELEM_BOTH_MULTIPLY(e021, e23, e013, -=, +=);
+    }
+
+    if (elems::has_e013(out_elems))
+    {
+      ELEM_BOTH_MULTIPLY(e013, scalar, e013, +=, +=);
+      ELEM_BOTH_MULTIPLY(e013, e0, e31, +=, -=);
+      ELEM_BOTH_MULTIPLY(e013, e1, e03, +=, -=);
+      ELEM_BOTH_MULTIPLY(e013, e3, e01, +=, +=);
+      ELEM_BOTH_MULTIPLY(e013, e2, e0123, +=, -=);
+      ELEM_BOTH_MULTIPLY(e013, e02, e123, +=, -=);
+      ELEM_BOTH_MULTIPLY(e013, e23, e021, -=, +=);
+    }
+
+    if (elems::has_e032(out_elems))
+    {
+      ELEM_BOTH_MULTIPLY(e032, scalar, e032, +=, +=);
+      ELEM_BOTH_MULTIPLY(e032, e0, e23, -=, -=);
+      ELEM_BOTH_MULTIPLY(e032, e2, e03, +=, +=);
+      ELEM_BOTH_MULTIPLY(e032, e3, e02, -=, -=);
+      ELEM_BOTH_MULTIPLY(e032, e1, e0123, +=, -=);
+      ELEM_BOTH_MULTIPLY(e032, e01, e123, -=, +=);
+      ELEM_BOTH_MULTIPLY(e032, e31, e021, -=, +=);
+    }
+
+    if (elems::has_e123(out_elems))
+    {
+      ELEM_BOTH_MULTIPLY(e123, scalar, e123, +=, +=);
+      ELEM_BOTH_MULTIPLY(e123, e1, e23, +=, +=);
+      ELEM_BOTH_MULTIPLY(e123, e2, e31, +=, +=);
+      ELEM_BOTH_MULTIPLY(e123, e3, e12, +=, +=);
+    }
+
+    if (elems::has_e0123(out_elems)) {
+      ELEM_BOTH_MULTIPLY(e0123, scalar, e0123, +=, +=);
+      ELEM_BOTH_MULTIPLY(e0123, e0, e123, +=, -=);
+      ELEM_BOTH_MULTIPLY(e0123, e1, e032, +=, -=);
+      ELEM_BOTH_MULTIPLY(e0123, e2, e013, +=, -=);
+      ELEM_BOTH_MULTIPLY(e0123, e3, e021, +=, -=);
+      ELEM_BOTH_MULTIPLY(e0123, e01, e23, +=, +=);
+      ELEM_BOTH_MULTIPLY(e0123, e02, e31, +=, +=);
+      ELEM_BOTH_MULTIPLY(e0123, e03, e12, +=, +=);
+    }
     return out;
   }
 
