@@ -19,6 +19,8 @@
 
 namespace tiny_pga
 {
+
+/// Bitmap for storing presence of multivector elements
 using Elems = std::uint16_t;
 
 namespace elems
@@ -322,13 +324,9 @@ constexpr Elems MotorElems =
 
 template <Elems elements> struct Multivector
 {
-  template <bool Condition, typename T> struct Conditional
-  {
-    T value;
-  };
-  template <typename T> struct Conditional<false, T>
-  {
-  };
+
+  template <bool Condition, typename T> struct Conditional  {T value;};
+  template <typename T> struct Conditional<false, T> {};
 
   // Optimization of Memory Footprint with use of conditional elements
   Conditional<elems::has_vector(elements), std::array<float, 4U>> Vector;
@@ -336,114 +334,68 @@ template <Elems elements> struct Multivector
   Conditional<elems::has_bivector0(elements), std::array<float, 4U>> Bivector0;
   Conditional<elems::has_trivector(elements), std::array<float, 4U>> Trivector;
 
-  template <typename T = float>
-  typename std::enable_if<elems::has_scalar(elements), T>::type &scalar()
-  {
-    return BivectorE.value[0];
-  }
+  static const Elems Elements = elements;
 
-  /// Alias to @ref e0123() function
-  template <typename T = float>
-  typename std::enable_if<elems::has_e0123(elements), T>::type &pseudo()
-  {
-    return Bivector0.value[3];
-  }
+  // In this macro we define setter and read-only getter functions,
+  // as well as define private stub function, in case if element does not exist
+#define DEFINE_ELEM_FUNCTION(element_name, array_position) \
+ public: \
+  template <typename T = float>\
+  typename std::enable_if<elems:: has_##element_name(elements), T>::type& element_name()\
+  {\
+    return array_position;\
+  };\
+  template <typename T = float> \
+  typename std::enable_if<elems::has_##element_name(elements), T>::type element_name() const \
+  {\
+    return array_position;\
+  }\
+  private: \
+  template <typename T = float> \
+  typename std::enable_if<!elems::has_##element_name(elements), T>::type element_name() const \
+  {\
+    return 0.F;\
+  }\
+ public:\
 
-  template <typename T = float> typename std::enable_if<elems::has_e0(elements), T>::type &e0()
-  {
-    return Vector.value[0];
-  }
 
-  template <typename T = float> typename std::enable_if<elems::has_e1(elements), T>::type &e1()
-  {
-    return Vector.value[1];
-  }
+  DEFINE_ELEM_FUNCTION(e0, Vector.value[0]);
+  DEFINE_ELEM_FUNCTION(e1, Vector.value[1]);
+  DEFINE_ELEM_FUNCTION(e2, Vector.value[2]);
+  DEFINE_ELEM_FUNCTION(e3, Vector.value[3]);
 
-  template <typename T = float> typename std::enable_if<elems::has_e2(elements), T>::type &e2()
-  {
-    return Vector.value[2];
-  }
+  DEFINE_ELEM_FUNCTION(e01, Bivector0.value[0]);
+  DEFINE_ELEM_FUNCTION(e02, Bivector0.value[1]);
+  DEFINE_ELEM_FUNCTION(e03, Bivector0.value[2]);
+  DEFINE_ELEM_FUNCTION(e0123, Bivector0.value[3]);
 
-  template <typename T = float> typename std::enable_if<elems::has_e3(elements), T>::type &e3()
-  {
-    return Vector.value[3];
-  }
+  DEFINE_ELEM_FUNCTION(scalar, BivectorE.value[0]);
+  DEFINE_ELEM_FUNCTION(e12, BivectorE.value[1]);
+  DEFINE_ELEM_FUNCTION(e31, BivectorE.value[2]);
+  DEFINE_ELEM_FUNCTION(e23, BivectorE.value[3]);
 
-  template <typename T = float> typename std::enable_if<elems::has_e01(elements), T>::type &e01()
-  {
-    return Bivector0.value[0];
-  }
+  DEFINE_ELEM_FUNCTION(e021, Trivector.value[0]);
+  DEFINE_ELEM_FUNCTION(e013, Trivector.value[1]);
+  DEFINE_ELEM_FUNCTION(e032, Trivector.value[2]);
+  DEFINE_ELEM_FUNCTION(e123, Trivector.value[3]);
 
-  template <typename T = float> typename std::enable_if<elems::has_e02(elements), T>::type &e02()
-  {
-    return Bivector0.value[1];
-  }
-  template <typename T = float> typename std::enable_if<elems::has_e03(elements), T>::type &e03()
-  {
-    return Bivector0.value[2];
-  }
-
-  ///
-  template <typename T = float>
-  typename std::enable_if<elems::has_e0123(elements), T>::type &e0123()
-  {
-    return Bivector0.value[3];
-  }
-
-  template <typename T = float> typename std::enable_if<elems::has_e12(elements), T>::type &e12()
-  {
-    return BivectorE.value[1];
-  }
-
-  template <typename T = float> typename std::enable_if<elems::has_e31(elements), T>::type &e31()
-  {
-    return BivectorE.value[2];
-  }
-
-  template <typename T = float> typename std::enable_if<elems::has_e23(elements), T>::type &e23()
-  {
-    return BivectorE.value[3];
-  }
-
-  template <typename T = float> typename std::enable_if<elems::has_e021(elements), T>::type &e021()
-  {
-    return Trivector.value[0];
-  }
-
-  template <typename T = float> typename std::enable_if<elems::has_e013(elements), T>::type &e013()
-  {
-    return Trivector.value[1];
-  }
-
-  template <typename T = float> typename std::enable_if<elems::has_e032(elements), T>::type &e032()
-  {
-    return Trivector.value[2];
-  }
-
-  template <typename T = float> typename std::enable_if<elems::has_e123(elements), T>::type &e123()
-  {
-    return Trivector.value[2];
-  }
 
   template <class T = Multivector<elems::RotorElems>>
   typename std::enable_if<elems::has_bivectorE(elements), T>::type rotor()
   {
-    Multivector<elems::RotorElems> rotor{BivectorE.value};
-    return rotor;
+    return Multivector<elems::RotorElems>{BivectorE.value};
   }
 
   template <class T = Multivector<elems::TranslatorElems>>
   typename std::enable_if<elems::has_bivector0(elements), T>::type translator()
   {
-    Multivector<elems::TranslatorElems> translator{Bivector0.value};
-    return translator;
+    return Multivector<elems::TranslatorElems> {Bivector0.value};
   }
 
   template <class T = Multivector<elems::MotorElems>>
   typename std::enable_if<elems::has_bivector0(elements), T>::type motor()
   {
-    Multivector<elems::MotorElems> motor{BivectorE.value, Bivector0.value};
-    return motor;
+    return Multivector<elems::MotorElems> {BivectorE.value, Bivector0.value};
   }
 
   template <Elems other_elements>
@@ -451,7 +403,7 @@ template <Elems elements> struct Multivector
       const Multivector<other_elements> &other)
   {
     constexpr Elems out_elems = elems::multiplication(elements, other_elements);
-    Multivector<out_elems> out{};
+    Multivector<elems::multiplication(elements, other_elements)> out{};
 
     if (elems::has_scalar(out_elems))
     {
@@ -460,39 +412,39 @@ template <Elems elements> struct Multivector
         out.scalar() += scalar() * other.scalar();
       }
 
-      if (elems::has_e1(elements) && elems::has_e1(other_elements))
+      if (elems::has_e1(elements) && !elems::has_e1(other_elements))
       {
         out.scalar() += e1() * other.e1();
       }
 
       if (elems::has_e2(elements) && elems::has_e2(other_elements))
       {
-        out.scalar() += e2() * other.e2();
+        out.scalar() += static_cast<float>(e2()) * static_cast<float>(other.e2());
       }
 
       if (elems::has_e3(elements) && elems::has_e3(other_elements))
       {
-        out.scalar() += e3() * other.e3();
+        out.scalar() += static_cast<float>(e3()) * static_cast<float>(other.e3());
       }
 
       if (elems::has_e12(elements) && elems::has_e12(other_elements))
       {
-        out.scalar() -= e12() * other.e12();
+        out.scalar() -= static_cast<float>(e12()) * static_cast<float>(other.e12());
       }
 
       if (elems::has_e31(elements) && elems::has_e31(other_elements))
       {
-        out.scalar() -= e31() * other.e31();
+        out.scalar() -= static_cast<float>(e31()) * static_cast<float>(other.e31());
       }
 
       if (elems::has_e23(elements) && elems::has_e23(other_elements))
       {
-        out.scalar() -= e23() * other.e23();
+        out.scalar() -= static_cast<float>(e23()) * static_cast<float>(other.e23());
       }
 
       if (elems::has_e123(elements) && elems::has_e123(other_elements))
       {
-        out.scalar() -= e123() * other.e123();
+        out.scalar() -= static_cast<float>(e123()) * static_cast<float>(other.e123());
       }
     }
 
@@ -575,7 +527,7 @@ template <Elems elements> struct Multivector
 
       if (elems::has_e0123(elements) && elems::has_e123(other_elements))
       {
-        out.e0() += pseudo() * other.e123();
+        out.e0() += e01234() * other.e123();
       }
     }
 
