@@ -12,19 +12,17 @@ TEST(BasicAutodiffTest, OneDependentVariableTest)
     AutoDf<> x = 15.F;
     AutoDf<> y = x + 5.F;
     AutoDf<> z = (2.f * x + 2.F) * (y - 3.F);
-    AutoDf<> w = 0.5 * z /(x+1.F) ;
+    AutoDf<> w = 0.5 * z / (x + 1.F);
 
     EXPECT_EQ(x.value(), 15.f);
     EXPECT_EQ(y.value(), 20.f);
     EXPECT_EQ(z.value(), 544.f);
-    EXPECT_EQ(w.value(), 0.5f * 544.f/16.f);
-
+    EXPECT_EQ(w.value(), 0.5f * 544.f / 16.f);
 
     ASSERT_EQ(x.variables().size(), 1);
     ASSERT_EQ(y.variables().size(), 1);
     ASSERT_EQ(z.variables().size(), 1);
     ASSERT_EQ(w.variables().size(), 1);
-
 
     auto xe = x.eval();
     auto ye = y.eval();
@@ -47,7 +45,6 @@ TEST(BasicAutodiffTest, OneDependentVariableTest)
     ASSERT_EQ(we.derivatives.size(), 1);
     EXPECT_EQ(we.derivatives[x.ID], 256.F);
 }
-
 
 TEST(BasicAutodiffTest, SumTest)
 {
@@ -147,7 +144,7 @@ TEST(BasicAutodiffTest, MultiplicationTest)
     AutoDf<> y = (x - 1.f) * (x + 1.F) * 2.F;
 
     EXPECT_EQ(x.value(), 7.f);
-    EXPECT_EQ(y.value(), 6.f*8.F*2.F);
+    EXPECT_EQ(y.value(), 6.f * 8.F * 2.F);
 
     ASSERT_EQ(x.variables().size(), 1);
     ASSERT_EQ(y.variables().size(), 1);
@@ -155,7 +152,7 @@ TEST(BasicAutodiffTest, MultiplicationTest)
     x.value() -= 1.F;
     // x value changes, but not others
     EXPECT_EQ(x.value(), 6.f);
-    EXPECT_EQ(y.value(), 6.f*8.F*2.F);
+    EXPECT_EQ(y.value(), 6.f * 8.F * 2.F);
 
     // re-evaluate
     auto xe = x.eval();
@@ -163,7 +160,7 @@ TEST(BasicAutodiffTest, MultiplicationTest)
 
     // x value changes, but not others
     EXPECT_EQ(x.value(), 6.f);
-    EXPECT_EQ(y.value(), 5.f*7.F*2.F);
+    EXPECT_EQ(y.value(), 5.f * 7.F * 2.F);
 
     // evaluation results are the same
     EXPECT_EQ(x.value(), xe.value);
@@ -175,5 +172,5 @@ TEST(BasicAutodiffTest, MultiplicationTest)
 
     // all partial derivatives are 1, since only + was used
     EXPECT_EQ(xe.derivatives[x.ID], 1.F);
-    EXPECT_EQ(ye.derivatives[x.ID], 4*x.value());
+    EXPECT_EQ(ye.derivatives[x.ID], 4 * x.value());
 }
