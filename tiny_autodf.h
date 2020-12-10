@@ -36,6 +36,14 @@ class AutoDf
     const AutoType type_;
     static size_t id_increment;
 
+//    struct CallGraphNode
+//    {
+//        std::shared_ptr<CallGraphNode> left {};
+//        std::shared_ptr<CallGraphNode> right {};
+//        std::shared_ptr<ScalarType> value{};
+//        std::map<size_t, std::shared_ptr<ScalarType>> variables{};
+//    };
+
     AutoDf<ScalarType>* left_ = nullptr;
     AutoDf<ScalarType>* right_ = nullptr;
     const bool own_left_ = false;
@@ -334,10 +342,10 @@ class AutoDf
     friend AutoDf<ScalarType>&& operator*(const ScalarType scalar_value, AutoDf<ScalarType>&& other);
 
     friend AutoDf<ScalarType>&& operator/(AutoDf<ScalarType>& other, const ScalarType scalar_value);
-    //friend AutoDf<ScalarType>&& operator/(AutoDf<ScalarType>&& other, const ScalarType scalar_value);
+    friend AutoDf<ScalarType>&& operator/(AutoDf<ScalarType>&& other, const ScalarType scalar_value);
 
     friend AutoDf<ScalarType>&& operator/(const ScalarType scalar_value, AutoDf<ScalarType>& other);
-    //friend AutoDf<ScalarType>&& operator/(const ScalarType scalar_value, AutoDf<ScalarType>&& other);
+    friend AutoDf<ScalarType>&& operator/(const ScalarType scalar_value, AutoDf<ScalarType>&& other);
 
 
   private:
@@ -485,12 +493,25 @@ AutoDf<float>&& operator/(AutoDf<float>& other, const float scalar_value)
     return std::move(AutoDf<float>::make_div(&other, scalar, false, true));
 }
 
+AutoDf<float>&& operator/(AutoDf<float>&& other, const float scalar_value)
+{
+    AutoDf<float>* scalar = new AutoDf<float>(scalar_value, true);
+    AutoDf<float>* other_copy = new AutoDf<float>(std::move(other));
+    return std::move(AutoDf<float>::make_div(other_copy, scalar, true, true));
+}
+
 AutoDf<float>&& operator/(const float scalar_value, AutoDf<float>& other)
 {
     AutoDf<float>* scalar = new AutoDf<float>(scalar_value, true);
     return std::move(AutoDf<float>::make_div(scalar, &other, true, false));
 }
 
+AutoDf<float>&& operator/(const float scalar_value, AutoDf<float>&& other)
+{
+    AutoDf<float>* scalar = new AutoDf<float>(scalar_value, true);
+    AutoDf<float>* other_copy = new AutoDf<float>(std::move(other));
+    return std::move(AutoDf<float>::make_div(scalar, other_copy, true, true));
+}
 
 template <>
 size_t AutoDf<float>::id_increment = 0U;
