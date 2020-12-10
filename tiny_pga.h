@@ -332,9 +332,7 @@ constexpr Elems MotorElems = static_cast<Elems>(elems::BitValues::kScalar) |
 
 }  // namespace elems
 
-/// Compile-time optimized (using templating) implementation of 3D PGA Multivector
-template <Elems elements, typename FieldType = float>
-struct Multivector;
+template <Elems elements, typename ScalarType = float> struct Multivector;
 using Plane = Multivector<elems::PlaneElems>;
 using Line = Multivector<elems::LineElems>;
 using Point = Multivector<elems::PointElems>;
@@ -342,9 +340,16 @@ using Rotor = Multivector<elems::RotorElems>;
 using Translator = Multivector<elems::TranslatorElems>;
 using Motor = Multivector<elems::MotorElems>;
 
-template <Elems elements, typename ElemType>
+/// Compile-time optimized (using templating) implementation of 3D PGA Multivector
+template <Elems elements, typename ScalarType>
 struct Multivector
 {
+    using Plane = Multivector<elems::PlaneElems, ScalarType>;
+    using Line = Multivector<elems::LineElems, ScalarType>;
+    using Point = Multivector<elems::PointElems, ScalarType>;
+    using Rotor = Multivector<elems::RotorElems, ScalarType>;
+    using Translator = Multivector<elems::TranslatorElems, ScalarType>;
+    using Motor = Multivector<elems::MotorElems, ScalarType>;
 
     template <bool Condition, typename T>
     struct Conditional
@@ -357,10 +362,10 @@ struct Multivector
     };
 
     // Optimization of Memory Footprint with use of conditional elements
-    Conditional<elems::has_vector(elements), std::array<ElemType, 4U>> Vector;
-    Conditional<elems::has_bivectorE(elements), std::array<ElemType, 4U>> BivectorE;
-    Conditional<elems::has_bivector0(elements), std::array<ElemType, 4U>> Bivector0;
-    Conditional<elems::has_trivector(elements), std::array<ElemType, 4U>> Trivector;
+    Conditional<elems::has_vector(elements), std::array<ScalarType, 4U>> Vector;
+    Conditional<elems::has_bivectorE(elements), std::array<ScalarType, 4U>> BivectorE;
+    Conditional<elems::has_bivector0(elements), std::array<ScalarType, 4U>> Bivector0;
+    Conditional<elems::has_trivector(elements), std::array<ScalarType, 4U>> Trivector;
 
     /// Exposing elements outside, as static const value
     static constexpr Elems Elements = elements;
@@ -368,7 +373,7 @@ struct Multivector
 #ifdef HIDE_CODE
     /// Templated (compile-time) getter/setter for obtaining individual elements
     ///
-    //  template<elems::BitValues elem> ElemType& value()
+    //  template<elems::BitValues elem> ScalarType& value()
     //  {
     //    if(bool(elements & static_cast<Elems>(elem)))
     //    {
@@ -388,12 +393,12 @@ struct Multivector
     //    {
     //      // This shall never happen
     //      throw std::exception();
-    //      static ElemType stub_element {};
+    //      static ScalarType stub_element {};
     //      return stub_element;
     //    }
     //  }
     //
-    //  template<elems::BitValues elem> ElemType value() const
+    //  template<elems::BitValues elem> ScalarType value() const
     //  {
     //    if(bool(elements & static_cast<Elems>(elem)))
     //    {
@@ -413,7 +418,7 @@ struct Multivector
     //    {
     //      // This shall never happen
     //      throw std::exception();
-    //      static ElemType stub_element {};
+    //      static ScalarType stub_element {};
     //      return stub_element;
     //    }
     //  }
@@ -421,22 +426,22 @@ struct Multivector
     // In this macro we define setter and read-only getter functions,
     // as well as define private stub function, in case if element does not exist
 #define ELEM_FUNCTION(element_name, array_position)                                             \
-    template <typename T = ElemType>                                                            \
+    template <typename T = ScalarType>                                                            \
     typename std::enable_if<elems::has_##element_name(elements), T>::type& element_name()       \
     {                                                                                           \
         return array_position;                                                                  \
     };                                                                                          \
-    template <typename T = ElemType>                                                            \
+    template <typename T = ScalarType>                                                            \
     typename std::enable_if<elems::has_##element_name(elements), T>::type element_name() const  \
     {                                                                                           \
         return array_position;                                                                  \
     }                                                                                           \
-    template <typename T = ElemType>                                                            \
+    template <typename T = ScalarType>                                                            \
     typename std::enable_if<!elems::has_##element_name(elements), T>::type& element_name()      \
     {                                                                                           \
         return stub_element;                                                                    \
     }                                                                                           \
-    template <typename T = ElemType>                                                            \
+    template <typename T = ScalarType>                                                            \
     typename std::enable_if<!elems::has_##element_name(elements), T>::type element_name() const \
     {                                                                                           \
         return 0.;                                                                              \
@@ -485,12 +490,12 @@ struct Multivector
     /// When using it, elements of resulting multivector (i.e. Blades) might grow, even though their
     /// real values remain zeros Consider casting result back to desired type in order to keep
     /// compile-time constraints active
-    template <Elems other_elements>
-    Multivector<elems::multiplication(elements, other_elements)> operator*(
-        const Multivector<other_elements>& other) const
+    template <Elems other_elements, typename ScalarTypeIn>
+    Multivector<elems::multiplication(elements, other_elements), ScalarType> operator*(
+        const Multivector<other_elements, ScalarTypeIn>& other) const
     {
         constexpr Elems out_elems = elems::multiplication(elements, other_elements);
-        Multivector<out_elems> out{};
+        Multivector<out_elems, ScalarType> out{};
 
 #define ELEM_MULTIPLY(elem_out, elem1, elem2, sign1)                        \
     if (elems::has_##elem1(elements) && elems::has_##elem2(other_elements)) \
@@ -685,9 +690,9 @@ struct Multivector
     }
 
     /// Reverse operator
-    Multivector<elements> operator~() const
+    Multivector<elements, ScalarType> operator~() const
     {
-        Multivector<elements> out{};
+        Multivector<elements, ScalarType> out{};
         if (elems::has_vector(elements))
         {
             out.Vector.value = Vector.value;
@@ -719,9 +724,9 @@ struct Multivector
         return out;
     }
 
-    Multivector<elements> sandwich(const Motor& motor) const
+    Multivector<elements, ScalarType> sandwich(const Motor& motor) const
     {
-        Multivector<elements> out;
+        Multivector<elements, ScalarType> out;
         return out;
     }
 
@@ -768,7 +773,7 @@ struct Multivector
         return point;
     }
 
-    ElemType stub_element = 0;
+    ScalarType stub_element = 0;
 };
 
 }  // namespace tiny_pga
