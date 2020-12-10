@@ -5,9 +5,7 @@
 #include "../tiny_autodf.h"
 #include <gtest/gtest.h>
 
-using namespace tiny_autodiff;
-
-
+using namespace tiny_autodf;
 
 TEST(BasicAutodiffTest, OneDependentVariableTest)
 {
@@ -15,7 +13,6 @@ TEST(BasicAutodiffTest, OneDependentVariableTest)
     AutoDf<> y = x + 5.F;
     AutoDf<> z = (2.f * x + 2.F) * (y - 3.F);
     AutoDf<> w = 0.5 * z /(x+1.F) ;
-
 
     EXPECT_EQ(x.value(), 15.f);
     EXPECT_EQ(y.value(), 20.f);
@@ -175,7 +172,6 @@ TEST(BasicAutodiffTest, MultiplicationTest)
     // number of partial derivatives is 1
     ASSERT_EQ(xe.derivatives.size(), 1);
     ASSERT_EQ(ye.derivatives.size(), 1);
-
 
     // all partial derivatives are 1, since only + was used
     EXPECT_EQ(xe.derivatives[x.ID], 1.F);
