@@ -17,6 +17,7 @@
 namespace tiny_autodiff
 {
 
+
 template <typename ScalarType = float>
 class AutoDf
 {
@@ -58,8 +59,7 @@ class AutoDf
 
   public:
 
-    /// Read-only ID value
-    /// Could be used to distinguish it's derivative
+    /// Read-only ID value, could be used to distinguish its derivative
     const size_t ID;
 
     /// Holds estimated value and list of derivatives
@@ -69,7 +69,6 @@ class AutoDf
         std::map<size_t, ScalarType> derivatives;
     };
 
-
     /// Empty constructor makes kVariableType with zero value
     AutoDf() : ID(++id_increment), type_(AutoType::kVariableType)
     {
@@ -78,8 +77,8 @@ class AutoDf
         variables_[ID] = value_;
     }
 
-    /// Creating AutoDf as an kVariableType or kScalarType
-    explicit AutoDf(const ScalarType&& value)
+    /// Create kVariableType from ScalarType
+    AutoDf(const ScalarType& value)
         : ID(++id_increment), type_(AutoType::kVariableType)
     {
         value_ = std::shared_ptr<ScalarType>(new ScalarType);
@@ -87,28 +86,29 @@ class AutoDf
         variables_[ID] = value_;
     }
 
-    /// Creating AutoDf as an kVariableType or kScalarType
-    explicit AutoDf(const ScalarType& value)
-        : ID(++id_increment), type_(AutoType::kVariableType)
+    /// Moving Ctor from rvalue -> takes ownership of everything
+    AutoDf(AutoDf<ScalarType>&& other)
+        : ID{other.ID},
+          type_(other.type_),
+          left_(other.left_),
+          right_(other.right_),
+          own_left_(other.own_left_),
+          own_right_(other.own_right_)
     {
-        value_ = std::shared_ptr<ScalarType>(new ScalarType);
-        *value_ = value;
-        variables_[ID] = value_;
+        value_ = std::move(other.value_);
+        variables_ = std::move(other.variables_);
     }
 
-//    AutoDf<ScalarType>&& operator=(const ScalarType value)
-//    {
-//        AutoDf<ScalarType>* out = new AutoDf<ScalarType>(value);
-//        return std::move(*out);
-//    }
-//
-//    AutoDf<ScalarType>&& operator=(const ScalarType& value)
-//    {
-//        AutoDf<ScalarType>* out = new AutoDf<ScalarType>(value);
-//        return std::move(*out);
-//    }
+    /// Creating AutoDf as an kCopyTypes
+    explicit AutoDf(const AutoDf<ScalarType>& other)
+        : ID(++id_increment), type_(AutoType::kCopyTypes), left_(&other)
+    {
+        value_ = std::shared_ptr<ScalarType>(new ScalarType);
+        *value_ = *other.value_;
+        variables_.insert(other.variables_.begin(), other.variables_.end());
+    }
 
-    /// Creating AutoDf as an kVariableType or kScalarType
+    /// Additional way to create kScalarType
     AutoDf(const ScalarType& value, bool is_const)
         : ID(++id_increment), type_(is_const ? AutoType::kScalarType : AutoType::kVariableType)
     {
@@ -119,26 +119,6 @@ class AutoDf
         {
             variables_[ID] = value_;
         }
-    }
-
-//    /// Creating AutoDf as an kCopyValue
-//    explicit AutoDf(AutoDf<ScalarType>& other) : ID{++id_increment}, type_(AutoType::kCopyType), left_(&other)
-//    {
-//        value_ = std::shared_ptr<ScalarType>(new ScalarType);
-//        *value_ = *left_->value_;
-//        std::copy(other.variables_.begin(), other.variables_.end(), variables_.begin());
-//    }
-
-    explicit AutoDf(AutoDf<ScalarType>&& other)
-        : ID{other.ID},
-          type_(other.type_),
-          left_(other.left_),
-          right_(other.right_),
-          own_left_(other.own_left_),
-          own_right_(other.own_right_)
-    {
-        value_ = std::move(other.value_);
-        variables_ = std::move(other.variables_);
     }
 
     /// List of input "mutable" values, contributing to this AutoDf value
@@ -335,15 +315,15 @@ class AutoDf
 
     /// addition from the left
     friend AutoDf<ScalarType>&& operator+(const ScalarType scalar_value, AutoDf<ScalarType>& other);
-    //friend AutoDf<ScalarType>&& operator+(const ScalarType scalar_value, AutoDf<ScalarType>&& other);
+    friend AutoDf<ScalarType>&& operator+(const ScalarType scalar_value, AutoDf<ScalarType>&& other);
 
     /// subtract from the right
     friend AutoDf<ScalarType>&& operator-(AutoDf<ScalarType>& other, const ScalarType scalar_value);
-    //friend AutoDf<ScalarType>&& operator-(AutoDf<ScalarType>&& other, const ScalarType scalar_value);
+    friend AutoDf<ScalarType>&& operator-(AutoDf<ScalarType>&& other, const ScalarType scalar_value);
 
     /// subtract from the left
     friend AutoDf<ScalarType>&& operator-(const ScalarType scalar_value, AutoDf<ScalarType>& other);
-    //friend AutoDf<ScalarType>&& operator-(const ScalarType scalar_value, AutoDf<ScalarType>&& other);
+    friend AutoDf<ScalarType>&& operator-(const ScalarType scalar_value, AutoDf<ScalarType>&& other);
 
     /// multiplication from the left
     friend AutoDf<ScalarType>&& operator*(AutoDf<ScalarType>& other, const ScalarType scalar_value);
@@ -431,7 +411,8 @@ AutoDf<float>&& operator+(AutoDf<float>& other, const float scalar_value)
 AutoDf<float>&& operator+(AutoDf<float>&& other, const float scalar_value)
 {
     AutoDf<float>* scalar = new AutoDf<float>(scalar_value, true);
-    return std::move(AutoDf<float>::make_sum(&other, scalar, false, true));
+    AutoDf<float>* other_copy = new AutoDf<float>(std::move(other));
+    return std::move(AutoDf<float>::make_sum(other_copy, scalar, true, true));
 }
 
 AutoDf<float>&& operator+(const float scalar_value, AutoDf<float>& other)
@@ -440,10 +421,23 @@ AutoDf<float>&& operator+(const float scalar_value, AutoDf<float>& other)
     return std::move(AutoDf<float>::make_sum( scalar, &other, true));
 }
 
+AutoDf<float>&& operator+(const float scalar_value, AutoDf<float>&& other)
+{
+    AutoDf<float>* scalar = new AutoDf<float>(scalar_value, true);
+    AutoDf<float>* other_copy = new AutoDf<float>(std::move(other));
+    return std::move(AutoDf<float>::make_sum(scalar, other_copy, true, true));
+}
+
 AutoDf<float>&& operator-(AutoDf<float>& other, const float scalar_value)
 {
     AutoDf<float>* scalar = new AutoDf<float>(scalar_value, true);
     return std::move(AutoDf<float>::make_sub(&other, scalar, false, true));
+}
+AutoDf<float>&& operator-(AutoDf<float>&& other, const float scalar_value)
+{
+    AutoDf<float>* scalar = new AutoDf<float>(scalar_value, true);
+    AutoDf<float>* other_copy = new AutoDf<float>(std::move(other));
+    return std::move(AutoDf<float>::make_sub(other_copy, scalar, true, true));
 }
 
 AutoDf<float>&& operator-(const float scalar_value, AutoDf<float>& other)
@@ -451,6 +445,14 @@ AutoDf<float>&& operator-(const float scalar_value, AutoDf<float>& other)
     AutoDf<float>* scalar = new AutoDf<float>(scalar_value, true);
     return std::move(AutoDf<float>::make_sub(scalar, &other, true));
 }
+
+AutoDf<float>&& operator-(const float scalar_value, AutoDf<float>&& other)
+{
+    AutoDf<float>* scalar = new AutoDf<float>(scalar_value, true);
+    AutoDf<float>* other_copy = new AutoDf<float>(std::move(other));
+    return std::move(AutoDf<float>::make_sub(scalar, other_copy, true, true));
+}
+
 
 AutoDf<float>&& operator*(AutoDf<float>& other, const float scalar_value)
 {
