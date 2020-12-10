@@ -327,11 +327,11 @@ class AutoDf
 
     /// multiplication from the left
     friend AutoDf<ScalarType>&& operator*(AutoDf<ScalarType>& other, const ScalarType scalar_value);
-    //friend AutoDf<ScalarType>&& operator*(AutoDf<ScalarType>&& other, const ScalarType scalar_value);
+    friend AutoDf<ScalarType>&& operator*(AutoDf<ScalarType>&& other, const ScalarType scalar_value);
 
     /// multiplication from the right
     friend AutoDf<ScalarType>&& operator*(const ScalarType scalar_value, AutoDf<ScalarType>& other);
-    //friend AutoDf<ScalarType>&& operator*(const ScalarType scalar_value, AutoDf<ScalarType>&& other);
+    friend AutoDf<ScalarType>&& operator*(const ScalarType scalar_value, AutoDf<ScalarType>&& other);
 
     friend AutoDf<ScalarType>&& operator/(AutoDf<ScalarType>& other, const ScalarType scalar_value);
     //friend AutoDf<ScalarType>&& operator/(AutoDf<ScalarType>&& other, const ScalarType scalar_value);
@@ -453,17 +453,30 @@ AutoDf<float>&& operator-(const float scalar_value, AutoDf<float>&& other)
     return std::move(AutoDf<float>::make_sub(scalar, other_copy, true, true));
 }
 
-
 AutoDf<float>&& operator*(AutoDf<float>& other, const float scalar_value)
 {
     AutoDf<float>* scalar = new AutoDf<float>(scalar_value, true);
     return std::move(AutoDf<float>::make_mult(&other, scalar, false, true));
 }
 
+AutoDf<float>&& operator*(AutoDf<float>&& other, const float scalar_value)
+{
+    AutoDf<float>* scalar = new AutoDf<float>(scalar_value, true);
+    AutoDf<float>* other_copy = new AutoDf<float>(std::move(other));
+    return std::move(AutoDf<float>::make_mult(other_copy, scalar, true, true));
+}
+
 AutoDf<float>&& operator*(const float scalar_value, AutoDf<float>& other)
 {
     AutoDf<float>* scalar = new AutoDf<float>(scalar_value, true);
     return std::move(AutoDf<float>::make_mult(scalar, &other, true, false));
+}
+
+AutoDf<float>&& operator*(const float scalar_value, AutoDf<float>&& other)
+{
+    AutoDf<float>* scalar = new AutoDf<float>(scalar_value, true);
+    AutoDf<float>* other_copy = new AutoDf<float>(std::move(other));
+    return std::move(AutoDf<float>::make_mult(scalar, other_copy, true, true));
 }
 
 AutoDf<float>&& operator/(AutoDf<float>& other, const float scalar_value)
