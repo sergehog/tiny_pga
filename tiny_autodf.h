@@ -47,7 +47,8 @@ class AutoDf
         std::shared_ptr<ScalarType> value{};
         std::map<size_t, std::shared_ptr<ScalarType>> variables{};
 
-        CallGraphNode(const size_t id, AutoType Type, const ScalarType& value_ = 0) : ID(id), type(Type)
+        CallGraphNode(const size_t id, const AutoType Type, const ScalarType& value_ = static_cast<ScalarType>(0.))
+            : ID(id), type(Type)
         {
             value = std::make_shared<ScalarType>(value_);
         }
@@ -62,7 +63,7 @@ class AutoDf
             else if (type == AutoType::kVariableType)
             {
                 eval_out.value = *value;
-                eval_out.derivatives[ID] = 1.;
+                eval_out.derivatives[ID] = static_cast<ScalarType>(1.);
             }
             else if (type == AutoType::kCopyType)
             {
@@ -80,7 +81,7 @@ class AutoDf
                 for (auto vi = variables.begin(); vi != variables.end(); vi++)
                 {
                     const size_t id = vi->first;
-                    eval_out.derivatives[id] = 0.F;
+                    eval_out.derivatives[id] = static_cast<ScalarType>(0.);
                     const auto d1 = eval1.derivatives.find(id);
                     if (d1 != eval1.derivatives.end())
                     {
@@ -105,7 +106,7 @@ class AutoDf
                 for (auto vi = variables.begin(); vi != variables.end(); vi++)
                 {
                     const size_t id = vi->first;
-                    eval_out.derivatives[id] = 0.F;
+                    eval_out.derivatives[id] = static_cast<ScalarType>(0.);
                     const auto d1 = eval1.derivatives.find(id);
                     if (d1 != eval1.derivatives.end())
                     {
@@ -130,7 +131,7 @@ class AutoDf
                 for (auto vi = variables.begin(); vi != variables.end(); vi++)
                 {
                     const size_t id = vi->first;
-                    eval_out.derivatives[id] = 0.F;
+                    eval_out.derivatives[id] = static_cast<ScalarType>(0.);
                     const auto d1 = eval1.derivatives.find(id);
                     if (d1 != eval1.derivatives.end())
                     {
@@ -181,7 +182,7 @@ class AutoDf
     AutoDf(const AutoType type,
            std::shared_ptr<CallGraphNode>& left,
            std::shared_ptr<CallGraphNode>& right,
-           const ScalarType& value = 0)
+           const ScalarType& value = static_cast<ScalarType>(0.))
         : ID(++id_increment)
     {
         node = std::make_shared<CallGraphNode>(ID, type, value);
@@ -198,7 +199,7 @@ class AutoDf
     /// Empty constructor makes kVariableType with zero value
     AutoDf() : ID(++id_increment)
     {
-        node = std::make_shared<CallGraphNode>(ID, AutoType::kVariableType, 0.);
+        node = std::make_shared<CallGraphNode>(ID, AutoType::kVariableType);
         node->variables[node->ID] = node->value;
     }
 
@@ -248,10 +249,37 @@ class AutoDf
     AutoDf<ScalarType>&& operator/(AutoDf<ScalarType>& other) { return make_div(node, other.node); }
     AutoDf<ScalarType>&& operator/(AutoDf<ScalarType>&& other) { return make_div(node, other.node); }
 
-    //    AutoDf<ScalarType>& operator+=(AutoDf<ScalarType>& other)
-    //    {
-    //        return make_sum(this, &other);
-    //    }
+    AutoDf<ScalarType>& operator+=(AutoDf<ScalarType>& other)
+    {
+        return InPlaceOperator(AutoType::kSumType, other.node, *node->value + *other.node->value);
+    }
+
+    AutoDf<ScalarType>& operator+=(AutoDf<ScalarType>&& other)
+    {
+        return InPlaceOperator(AutoType::kSumType, other.node, *node->value + *other.node->value);
+    }
+
+    AutoDf<ScalarType>& operator+=(const ScalarType& value)
+    {
+        AutoDf<ScalarType> other(value, true);
+        return InPlaceOperator(AutoType::kSumType, other.node, *node->value + *other.node->value);
+    }
+
+    AutoDf<ScalarType>& operator-=(AutoDf<ScalarType>& other)
+    {
+        return InPlaceOperator(AutoType::kSumType, other.node, *node->value - *other.node->value);
+    }
+
+    AutoDf<ScalarType>& operator-=(AutoDf<ScalarType>&& other)
+    {
+        return InPlaceOperator(AutoType::kSumType, other.node, *node->value - *other.node->value);
+    }
+
+    AutoDf<ScalarType>& operator-=(const ScalarType& value)
+    {
+        AutoDf<ScalarType> other(value, true);
+        return InPlaceOperator(AutoType::kSumType, other.node, *node->value - *other.node->value);
+    }
 
     /// addition from the right
     friend AutoDf<ScalarType>&& operator+(AutoDf<ScalarType>& other, const ScalarType scalar_value);
@@ -284,6 +312,18 @@ class AutoDf
     friend AutoDf<ScalarType>&& operator/(const ScalarType scalar_value, AutoDf<ScalarType>&& other);
 
   private:
+    AutoDf<ScalarType>& InPlaceOperator(const AutoType& type,
+                                        std::shared_ptr<CallGraphNode>& right_node,
+                                        const ScalarType new_value)
+    {
+        auto result = std::make_shared<CallGraphNode>(++id_increment, type, new_value);
+        result->left = node;
+        result->right = right_node;
+        FillVariables(node, right_node, result);
+        node.swap(result);
+        return *this;
+    }
+
     static AutoDf<ScalarType>&& make_sum(std::shared_ptr<CallGraphNode>& left, std::shared_ptr<CallGraphNode>& right)
     {
         AutoDf<ScalarType>* out = new AutoDf<ScalarType>(AutoType::kSumType, left, right);

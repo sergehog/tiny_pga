@@ -12,7 +12,7 @@ TEST(BasicAutodiffTest, OneDependentVariableTest)
     AutoDf<> x = 15.F;
     AutoDf<> y = x + 5.F;
     AutoDf<> z = (2.f * x + 2.F) * (y - 3.F);
-    AutoDf<> w = 0.5 * z / (x + 1.F);
+    AutoDf<> w = 0.5f * z / (x + 1.F);
 
     EXPECT_EQ(x.value(), 15.f);
     EXPECT_EQ(y.value(), 20.f);
@@ -24,26 +24,42 @@ TEST(BasicAutodiffTest, OneDependentVariableTest)
     ASSERT_EQ(z.variables().size(), 1);
     ASSERT_EQ(w.variables().size(), 1);
 
+    y += 5.f;
+    EXPECT_EQ(y.value(), 25.f);
     auto xe = x.eval();
     auto ye = y.eval();
     auto ze = z.eval();
     auto we = w.eval();
 
     EXPECT_EQ(x.value(), xe.value);
-    ASSERT_EQ(xe.derivatives.size(), 1);
-    EXPECT_EQ(xe.derivatives[x.ID], 1.F);
-
     EXPECT_EQ(y.value(), ye.value);
-    ASSERT_EQ(ye.derivatives.size(), 1);
-    EXPECT_EQ(ye.derivatives[x.ID], 1.F);
-
     EXPECT_EQ(z.value(), ze.value);
-    ASSERT_EQ(ze.derivatives.size(), 1);
-    EXPECT_EQ(ze.derivatives[x.ID], 66.F);
-
     EXPECT_EQ(w.value(), we.value);
+
+    ASSERT_EQ(xe.derivatives.size(), 1);
+    ASSERT_EQ(ye.derivatives.size(), 1);
+    ASSERT_EQ(ze.derivatives.size(), 1);
     ASSERT_EQ(we.derivatives.size(), 1);
+
+    EXPECT_EQ(xe.derivatives[x.ID], 1.F);
+    EXPECT_EQ(ye.derivatives[x.ID], 1.F);
+    EXPECT_EQ(ze.derivatives[x.ID], 66.F);
     EXPECT_EQ(we.derivatives[x.ID], 256.F);
+
+    // nothing changed, except y
+    EXPECT_EQ(x.value(), 15.f);
+    EXPECT_EQ(y.value(), 25.f);
+    EXPECT_EQ(z.value(), 544.f);
+    EXPECT_EQ(w.value(), 0.5f * 544.f / 16.f);
+
+    x.value() += 1.F;
+    // re-calculate only one formula, but other are updated too, since they are part of call-graph
+    we = w.eval();
+    EXPECT_EQ(x.value(), 16.f);
+    EXPECT_EQ(y.value(), 25.f);
+    EXPECT_EQ(z.value(), 612.f);
+    EXPECT_EQ(w.value(), 18.f);
+
 }
 
 TEST(BasicAutodiffTest, SumTest)
