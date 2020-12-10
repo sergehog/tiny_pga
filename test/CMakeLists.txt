@@ -11,6 +11,10 @@ target_link_libraries(pga_test gtest gtest_main pthread)
 add_executable(autodiff_test autodf_test.cpp)
 target_link_libraries(autodiff_test gtest gtest_main pthread)
 
+add_executable(auotdf_pga_test auotdf_pga_test.cpp)
+target_link_libraries(auotdf_pga_test gtest gtest_main pthread)
+
 add_test(NAME pga_test COMMAND pga_test)
 add_test(NAME autodiff_test COMMAND autodiff_test)
+add_test(NAME auotdf_pga_test COMMAND auotdf_pga_test)
 
