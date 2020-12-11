@@ -9,6 +9,8 @@ add_executable(pga_test pga_test.cpp)
 add_executable(autodiff_test autodf_test.cpp)
 add_executable(auotdf_pga_test auotdf_pga_test.cpp)
 
+add_executable(pga3d_test pga3d_test.cpp)
+
 target_link_libraries(elements_test gtest gtest_main pthread)
 target_link_libraries(pga_test gtest gtest_main pthread)
 target_link_libraries(autodiff_test gtest gtest_main pthread)
