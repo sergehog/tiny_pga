@@ -1,10 +1,25 @@
+/*
+ * This file is part of the Tiny-PGA distribution (https://github.com/sergehog/tiny_pga)
+ * Copyright (c) 2020 Sergey Smirnov / Seregium Oy.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
 //
 // Simple automatic differentiation C++/header-only library
 // Supposed to be very easy in use, and be able to replace/represent classical scalars types in basic formulas/equations
 // Supports partial derivatives (i.e. functions of many variables)
-//
-// Copyright Sergey Smirnov  / Seregium Oy 2020
-// Email: sergei.smirnov@gmail.com
 //
 
 #include <map>

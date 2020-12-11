@@ -4,16 +4,17 @@ set(CMAKE_CXX_STANDARD 14)
 
 find_package(GTest CONFIG REQUIRED)
 
-add_executable(pga_test pga_test.cpp elements_test.cpp )
-
-target_link_libraries(pga_test gtest gtest_main pthread)
-
+add_executable(elements_test elements_test.cpp )
+add_executable(pga_test pga_test.cpp)
 add_executable(autodiff_test autodf_test.cpp)
-target_link_libraries(autodiff_test gtest gtest_main pthread)
-
 add_executable(auotdf_pga_test auotdf_pga_test.cpp)
+
+target_link_libraries(elements_test gtest gtest_main pthread)
+target_link_libraries(pga_test gtest gtest_main pthread)
+target_link_libraries(autodiff_test gtest gtest_main pthread)
 target_link_libraries(auotdf_pga_test gtest gtest_main pthread)
 
+add_test(NAME elements_test COMMAND elements_test)
 add_test(NAME pga_test COMMAND pga_test)
 add_test(NAME autodiff_test COMMAND autodiff_test)
 add_test(NAME auotdf_pga_test COMMAND auotdf_pga_test)

@@ -1,13 +1,26 @@
+/*
+ * This file is part of the Tiny-PGA distribution (https://github.com/sergehog/tiny_pga)
+ * Copyright (c) 2020 Sergey Smirnov / Seregium Oy.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 //
 // C++ Implementation of 3D Projectove Geometric Algebra (a.k.a Plane-based Geometric Algebra)
 // Highly-templatized implementation helps with number of issues:
 // * reducing computational complexity of PGA operators via compile-time optimizations
 // * reducing memory footprint
 // * compile-time checks for assignments correctness / blade matching (to some extent)
-//
-// Created by Sergey Smirnov on 5.12.2020.
-// Email: sergei.smirnov@gmail.com
-// Copyright Sergey Smirnov  / Seregium Oy 2020
 //
 
 #ifndef TINY_PGA_H
@@ -333,12 +346,12 @@ constexpr Elems MotorElems = static_cast<Elems>(elems::BitValues::kScalar) |
 }  // namespace elems
 
 template <Elems elements, typename ScalarType = float> struct Multivector;
-using Plane = Multivector<elems::PlaneElems>;
-using Line = Multivector<elems::LineElems>;
-using Point = Multivector<elems::PointElems>;
-using Rotor = Multivector<elems::RotorElems>;
-using Translator = Multivector<elems::TranslatorElems>;
-using Motor = Multivector<elems::MotorElems>;
+using PlaneF = Multivector<elems::PlaneElems, float>;
+using LineF = Multivector<elems::LineElems, float>;
+using PointF = Multivector<elems::PointElems, float>;
+using RotorF = Multivector<elems::RotorElems, float>;
+using TranslatorF = Multivector<elems::TranslatorElems, float>;
+using MotorF = Multivector<elems::MotorElems, float>;
 
 /// Compile-time optimized (using templating) implementation of 3D PGA Multivector
 template <Elems elements, typename ScalarType>
@@ -425,7 +438,7 @@ struct Multivector
 #endif
     // In this macro we define setter and read-only getter functions,
     // as well as define private stub function, in case if element does not exist
-#define ELEM_FUNCTION(element_name, array_position)                                             \
+#define ELEM_ACCESS_FUNCTION(element_name, array_position)                                             \
     template <typename T = ScalarType>                                                            \
     typename std::enable_if<elems::has_##element_name(elements), T>::type& element_name()       \
     {                                                                                           \
@@ -447,25 +460,25 @@ struct Multivector
         return 0.;                                                                              \
     }
 
-    ELEM_FUNCTION(e0, Vector.value[0]);
-    ELEM_FUNCTION(e1, Vector.value[1]);
-    ELEM_FUNCTION(e2, Vector.value[2]);
-    ELEM_FUNCTION(e3, Vector.value[3]);
+    ELEM_ACCESS_FUNCTION(e0, Vector.value[0]);
+    ELEM_ACCESS_FUNCTION(e1, Vector.value[1]);
+    ELEM_ACCESS_FUNCTION(e2, Vector.value[2]);
+    ELEM_ACCESS_FUNCTION(e3, Vector.value[3]);
 
-    ELEM_FUNCTION(e01, Bivector0.value[0]);
-    ELEM_FUNCTION(e02, Bivector0.value[1]);
-    ELEM_FUNCTION(e03, Bivector0.value[2]);
-    ELEM_FUNCTION(e0123, Bivector0.value[3]);
+    ELEM_ACCESS_FUNCTION(e01, Bivector0.value[0]);
+    ELEM_ACCESS_FUNCTION(e02, Bivector0.value[1]);
+    ELEM_ACCESS_FUNCTION(e03, Bivector0.value[2]);
+    ELEM_ACCESS_FUNCTION(e0123, Bivector0.value[3]);
 
-    ELEM_FUNCTION(scalar, BivectorE.value[0]);
-    ELEM_FUNCTION(e12, BivectorE.value[1]);
-    ELEM_FUNCTION(e31, BivectorE.value[2]);
-    ELEM_FUNCTION(e23, BivectorE.value[3]);
+    ELEM_ACCESS_FUNCTION(scalar, BivectorE.value[0]);
+    ELEM_ACCESS_FUNCTION(e12, BivectorE.value[1]);
+    ELEM_ACCESS_FUNCTION(e31, BivectorE.value[2]);
+    ELEM_ACCESS_FUNCTION(e23, BivectorE.value[3]);
 
-    ELEM_FUNCTION(e021, Trivector.value[0]);
-    ELEM_FUNCTION(e013, Trivector.value[1]);
-    ELEM_FUNCTION(e032, Trivector.value[2]);
-    ELEM_FUNCTION(e123, Trivector.value[3]);
+    ELEM_ACCESS_FUNCTION(e021, Trivector.value[0]);
+    ELEM_ACCESS_FUNCTION(e013, Trivector.value[1]);
+    ELEM_ACCESS_FUNCTION(e032, Trivector.value[2]);
+    ELEM_ACCESS_FUNCTION(e123, Trivector.value[3]);
 #undef DEFINE_ELEM_FUNCTION
 
     template <class T = Multivector<elems::RotorElems>>
@@ -727,13 +740,76 @@ struct Multivector
     Multivector<elements, ScalarType> sandwich(const Motor& motor) const
     {
         Multivector<elements, ScalarType> out;
+        auto res = motor * *this * ~motor;
+        if (elems::has_vector(elements))
+        {
+            out.Vector = res.Vector;
+        }
+        if (elems::has_bivector0(elements))
+        {
+            out.Bivector0 = res.Bivector0;
+        }
+        if (elems::has_bivectorE(elements))
+        {
+            out.BivectorE = res.BivectorE;
+        }
+        if (elems::has_trivector(elements))
+        {
+            out.Trivector = res.Trivector;
+        }
+        return out;
+    }
+
+    Multivector<elements, ScalarType> sandwich(const Rotor& rotor) const
+    {
+        Multivector<elements, ScalarType> out;
+        auto res = rotor * *this * ~rotor;
+        if (elems::has_vector(elements))
+        {
+            out.Vector = res.Vector;
+        }
+        if (elems::has_bivector0(elements))
+        {
+            out.Bivector0 = res.Bivector0;
+        }
+        if (elems::has_bivectorE(elements))
+        {
+            out.BivectorE = res.BivectorE;
+        }
+        if (elems::has_trivector(elements))
+        {
+            out.Trivector = res.Trivector;
+        }
+        return out;
+    }
+
+    Multivector<elements, ScalarType> sandwich(const Translator & translator) const
+    {
+        Multivector<elements, ScalarType> out;
+        auto res = (translator * *this) * ~translator;
+        if (elems::has_vector(elements))
+        {
+            out.Vector = res.Vector;
+        }
+        if (elems::has_bivector0(elements))
+        {
+            out.Bivector0 = res.Bivector0;
+        }
+        if (elems::has_bivectorE(elements))
+        {
+            out.BivectorE = res.BivectorE;
+        }
+        if (elems::has_trivector(elements))
+        {
+            out.Trivector = res.Trivector;
+        }
         return out;
     }
 
     /// Converts whatever it's now to a plane
     explicit operator Plane() const
     {
-        Plane plane{};
+        Multivector<elems::PlaneElems, ScalarType> plane{};
         if (elems::has_e0(elements))
         {
             plane.e0() = e0();
@@ -756,7 +832,7 @@ struct Multivector
     /// Converts whatever it's now to a point
     explicit operator Point() const
     {
-        Point point{};
+        Multivector<elems::PointElems, ScalarType> point{};
         if (elems::has_e021(elements))
         {
             point.e021() = e021();
