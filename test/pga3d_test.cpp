@@ -5,6 +5,10 @@
 
 int main(int argc, char** argv)
 {
+    const PGA3D<> e0(1.F, kE0);
+    const PGA3D<> e1(1.F, kE1);
+    const PGA3D<> e2(1.F, kE2);
+    const PGA3D<> e3(1.F, kE3);
 
     // Elements of the even subalgebra (scalar + bivector + pss) of unit length are motors
     PGA3D<> rot = rotor(PI / 2.0f, e1 * e2);
@@ -16,11 +20,11 @@ int main(int argc, char** argv)
     PGA3D<> orig = ax_z ^ e3;
 
     // We can also easily create points and join them into a line using the regressive (vee, &) product.
-    PGA3D<> px = point(1.0, 0.0, 0.0);
+    PGA3D<> px = point(1.f, 0.f, 0.f);
     PGA3D<> line = orig & px;
 
     // Lets also create the plane with equation 2x + z - 3 = 0
-    PGA3D<> p = plane(2, 0, 1, -3);
+    PGA3D<> p = plane(2.f, 0.f, 1.f, -3.f);
 
     // rotations work on all elements
     PGA3D<> rotated_plane = rot * p * ~rot;

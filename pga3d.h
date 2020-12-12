@@ -37,7 +37,7 @@ template <typename ScalarType = float>
 class PGA3D
 {
   private:
-    std::array<ScalarType, 16> mvec;
+    std::array<ScalarType, 16> mvec ;
 
   public:
     PGA3D() : mvec{}
@@ -47,6 +47,11 @@ class PGA3D
     PGA3D(ScalarType f, Basis idx = kScalar) : mvec{}
     {
         mvec[idx] = f;
+    }
+
+    PGA3D(Basis idx): mvec{}
+    {
+        mvec[idx] = 1.F;
     }
 
     ScalarType& operator[](size_t idx) { return mvec[idx]; }
@@ -175,7 +180,7 @@ inline PGA3D<ScalarType> operator!(const PGA3D<ScalarType>& a)
 template <typename ScalarType = float>
 inline PGA3D<ScalarType> operator*(const PGA3D<ScalarType>& a, const PGA3D<ScalarType>& b)
 {
-    PGA3D<ScalarType> res;
+    PGA3D<ScalarType> res {};
     res[0] = b[0] * a[0] + b[2] * a[2] + b[3] * a[3] + b[4] * a[4] - b[8] * a[8] - b[9] * a[9] - b[10] * a[10] -
              b[14] * a[14];
     res[1] = b[1] * a[0] + b[0] * a[1] + b[2] * a[5] - b[5] * a[2] + b[3] * a[6] - b[6] * a[3] + b[4] * a[7] -
@@ -364,7 +369,7 @@ inline PGA3D<ScalarType> operator-(const PGA3D<ScalarType>& a, const PGA3D<Scala
 
 /// scalar/multivector multiplication : res = a * b
 template <typename ScalarType = float>
-inline PGA3D<ScalarType> operator*(const float& a, const PGA3D<ScalarType>& b)
+inline PGA3D<ScalarType> operator*(const ScalarType& a, const PGA3D<ScalarType>& b)
 {
     PGA3D<ScalarType> res;
     res[0] = a * b[0];
@@ -386,9 +391,10 @@ inline PGA3D<ScalarType> operator*(const float& a, const PGA3D<ScalarType>& b)
     return res;
 };
 
+
 /// multivector/scalar multiplication : res = a * b
 template <typename ScalarType = float>
-inline PGA3D<ScalarType> operator*(const PGA3D<ScalarType>& a, const float& b)
+inline PGA3D<ScalarType> operator*(const PGA3D<ScalarType>& a, const ScalarType& b)
 {
     PGA3D<ScalarType> res;
     res[0] = a[0] * b;
@@ -506,38 +512,36 @@ inline PGA3D<ScalarType> operator-(const PGA3D<ScalarType>& a, const float& b)
     return res;
 };
 
-/// PGA is plane based. Vectors are planes. (think linear functionals)
-static const PGA3D<float> e0(1.0f, kE0), e1(1.0f, kE1), e2(1.0f, kE2), e3(1.0f, kE3);
-
-/// PGA points are trivectors.
-static const PGA3D<float> e123 = e1 ^ e2 ^ e3, e032 = e0 ^ e3 ^ e2, e013 = e0 ^ e1 ^ e3, e021 = e0 ^ e2 ^ e1;
-
-
 /// A rotor (Euclidean line) and translator (Ideal line)
 template <typename ScalarType = float>
 static PGA3D<ScalarType> rotor(float angle, PGA3D<ScalarType> line)
 {
-    return cos(angle / 2.0f) + sin(angle / 2.0f) * line.normalized();
+    return std::cos(angle / 2.0f) + std::sin(angle / 2.0f) * line.normalized();
 }
 
 /// Translator
 template <typename ScalarType = float>
-static PGA3D<ScalarType> translator(float dist, PGA3D<ScalarType> line)
+static PGA3D<ScalarType> translator(ScalarType dist, PGA3D<ScalarType> line)
 {
     return 1.0f + dist / 2.0f * line;
 }
 
 /// A plane is defined using its homogenous equation ax + by + cz + d = 0
 template <typename ScalarType = float>
-static PGA3D<ScalarType> plane(float a, float b, float c, float d)
+static PGA3D<ScalarType> plane(ScalarType a, ScalarType b, ScalarType c, ScalarType d)
 {
+    /// PGA is plane based. Vectors are planes
+    const PGA3D<ScalarType> e0(kE0), e1(kE1), e2(kE2), e3(kE3);
     return a * e1 + b * e2 + c * e3 + d * e0;
 }
 
 /// A point is just a homogeneous point, euclidean coordinates plus the origin
 template <typename ScalarType = float>
-static PGA3D<ScalarType> point(float x, float y, float z)
+static PGA3D<ScalarType> point(const ScalarType& x, const ScalarType& y, const ScalarType& z)
 {
+    const PGA3D<ScalarType> e0(kE0), e1(kE1), e2(kE2), e3(kE3);
+    /// PGA points are trivectors.
+    const PGA3D<ScalarType> e123 = e1 ^ e2 ^ e3, e032 = e0 ^ e3 ^ e2, e013 = e0 ^ e1 ^ e3, e021 = e0 ^ e2 ^ e1;
     return e123 + x * e032 + y * e013 + z * e021;
 }
 
@@ -545,22 +549,25 @@ static PGA3D<ScalarType> point(float x, float y, float z)
 // we start with a function that generates motors.
 // circle(t) with t going from 0 to 1.
 template <typename ScalarType = float>
-static PGA3D<ScalarType> circle(float t, float radius, PGA3D<ScalarType> line)
+static PGA3D<ScalarType> circle(ScalarType t, ScalarType radius, PGA3D<ScalarType> line)
 {
+    const PGA3D<ScalarType> e0(kE0), e1(kE1), e2(kE2), e3(kE3);
     return rotor(t * 2.0f * PI, line) * translator(radius, e1 * e0);
 }
 
 // a torus is now the product of two circles.
 template <typename ScalarType = float>
-static PGA3D<ScalarType> torus(float s, float t, float r1, PGA3D<ScalarType> l1, float r2, PGA3D<ScalarType> l2)
+static PGA3D<ScalarType> torus(ScalarType s, ScalarType t, ScalarType r1, PGA3D<ScalarType> l1, ScalarType r2, PGA3D<ScalarType> l2)
 {
     return circle(s, r2, l2) * circle(t, r1, l1);
 }
 
 // and to sample its points we simply sandwich the origin ..
 template <typename ScalarType = float>
-static PGA3D<ScalarType> point_on_torus(float s, float t)
+static PGA3D<ScalarType> point_on_torus(ScalarType s, ScalarType t)
 {
+    const PGA3D<ScalarType> e0(1.0f, kE0), e1(1.0f, kE1), e2(1.0f, kE2), e3(1.0f, kE3);
+    const PGA3D<ScalarType> e123 = e1 ^ e2 ^ e3;
     PGA3D<ScalarType> to = torus(s, t, 0.25f, e1 * e2, 0.6f, e1 * e3);
     return to * e123 * ~to;
 }
