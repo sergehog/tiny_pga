@@ -519,7 +519,7 @@ static PGA3D<ScalarType> rotor(float angle, PGA3D<ScalarType> line)
     return std::cos(angle / 2.0f) + std::sin(angle / 2.0f) * line.normalized();
 }
 
-/// Translator
+/// Translator over directed line
 template <typename ScalarType = float>
 static PGA3D<ScalarType> translator(ScalarType dist, PGA3D<ScalarType> line)
 {

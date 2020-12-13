@@ -1,9 +1,24 @@
-// This code was originally copied from bivector.net
-// Copyright and License are unknown
-
+// This code was originally downloaded from bivector.net
+/*
+ * This file is part of the Tiny-PGA distribution (https://github.com/sergehog/tiny_pga)
+ * Copyright (c) 2020 Sergey Smirnov / Seregium Oy.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "../pga3d.h"
+#include <gtest/gtest.h>
 
-int main(int argc, char** argv)
+TEST(PGA3DTest, BasicTest)
 {
     const PGA3D<> e0(1.F, kE0);
     const PGA3D<> e1(1.F, kE1);
@@ -56,5 +71,64 @@ int main(int argc, char** argv)
     (e0 - 1.0f).log();
     (1.0f - e0).log();
 
-    return 0;
 }
+
+TEST(PGA3DTest, MotorEstimatorTest)
+{
+    PGA3D<> A = point(0.F, 0.F, 0.F);
+    PGA3D<> B = point(1.F, 0.F, 0.F);
+    PGA3D<> C = point(0.F,1.F, 0.F);
+
+    PGA3D<> A1 = point(1.F, 1.F, 1.F);
+    PGA3D<> B1 = point(1.F, 2.F, 1.F);
+    PGA3D<> C1 = point(1.F, 1.F, 2.F);
+
+
+    // Va = sqrt(Ai/A);
+    auto Va = (1.F + (A1*~A)).normalized();
+    std::cout << "Va = ";
+    Va.log();
+
+    auto Ba = Va * B * ~Va;
+    std::cout << "Ba = ";
+    Ba.log();
+
+    auto Vb_squared = (A1 & B1)* ~(A1 & Ba);
+    std::cout << "Vb_squared = ";
+    Vb_squared.log();
+
+    auto Vb = (1 + Vb_squared).normalized();  //Vb = sqrt(Vb_squared);
+    std::cout << "Vb = ";
+    Vb.log();
+
+    auto Cba = Vb*Va*C*~Va*~Vb;
+    std::cout << "Cba = ";
+    Cba.log();
+
+    auto Vc_squared = (A1 & B1 & C1) * ~(A1 & B1 & Cba);
+    std::cout << "Vc_squared = ";
+    Vc_squared.log();
+
+    auto Vc = (1 + Vc_squared).normalized();  //Vc = sqrt(Vc_squared);
+    std::cout << "Vc = ";
+    Vc.log();
+
+    auto V = Vc * Vb * Va;
+    std::cout << "V = ";
+    V.log();
+
+    auto Ai = V * A * ~V;
+    std::cout << "Ai = ";
+    Ai.log();
+
+    auto Bi = V * B * ~V;
+    std::cout << "Bi = ";
+    Bi.log();
+
+    auto Ci = V * C * ~V;
+    std::cout << "Ci = ";
+    Ci.log();
+
+}
+
+

@@ -200,8 +200,8 @@ class AutoDf
 
     /// Creates AutoDf of specified type, and takes their ownership if needed
     AutoDf(const AutoType type,
-           std::shared_ptr<CallGraphNode>& left,
-           std::shared_ptr<CallGraphNode>& right,
+           const std::shared_ptr<CallGraphNode>& left,
+           const std::shared_ptr<CallGraphNode>& right,
            const ScalarType& value = static_cast<ScalarType>(0.))
         : ID(++id_increment)
     {
@@ -286,14 +286,14 @@ class AutoDf
     ScalarType& value() const { return *node->value; }
     explicit operator ScalarType() const { return *node->value; }
 
-    AutoDf<ScalarType>&& operator+(AutoDf<ScalarType>& other) { return make_sum(node, other.node); }
-    AutoDf<ScalarType>&& operator+(AutoDf<ScalarType>&& other) { return make_sum(node, other.node); }
-    AutoDf<ScalarType>&& operator-(AutoDf<ScalarType>& other) { return make_sub(node, other.node); }
-    AutoDf<ScalarType>&& operator-(AutoDf<ScalarType>&& other) { return make_sub(node, other.node); }
-    AutoDf<ScalarType>&& operator*(AutoDf<ScalarType>& other) { return make_mult(node, other.node); }
-    AutoDf<ScalarType>&& operator*(AutoDf<ScalarType>&& other) { return make_mult(node, other.node); }
-    AutoDf<ScalarType>&& operator/(AutoDf<ScalarType>& other) { return make_div(node, other.node); }
-    AutoDf<ScalarType>&& operator/(AutoDf<ScalarType>&& other) { return make_div(node, other.node); }
+//    AutoDf<ScalarType>&& operator+(const AutoDf<ScalarType>& other) { return make_sum(node, other.node); }
+//    AutoDf<ScalarType>&& operator+(AutoDf<ScalarType>&& other) { return make_sum(node, other.node); }
+//    AutoDf<ScalarType>&& operator-(const AutoDf<ScalarType>& other) { return make_sub(node, other.node); }
+//    AutoDf<ScalarType>&& operator-(AutoDf<ScalarType>&& other) { return make_sub(node, other.node); }
+//    AutoDf<ScalarType>&& operator*(const AutoDf<ScalarType>& other) { return make_mult(node, other.node); }
+//    AutoDf<ScalarType>&& operator*(AutoDf<ScalarType>&& other) { return make_mult(node, other.node); }
+//    AutoDf<ScalarType>&& operator/(const AutoDf<ScalarType>& other) { return make_div(node, other.node); }
+//    AutoDf<ScalarType>&& operator/(AutoDf<ScalarType>&& other) { return make_div(node, other.node); }
 
 
     AutoDf<ScalarType>& operator+=(const ScalarType value)
@@ -302,7 +302,7 @@ class AutoDf
         return InPlaceOperator(AutoType::kSumType, other.node, *node->value + *other.node->value);
     }
 
-    AutoDf<ScalarType>& operator+=(AutoDf<ScalarType>& other)
+    AutoDf<ScalarType>& operator+=(const AutoDf<ScalarType>& other)
     {
         return InPlaceOperator(AutoType::kSumType, other.node, *node->value + *other.node->value);
     }
@@ -318,7 +318,7 @@ class AutoDf
         return InPlaceOperator(AutoType::kSumType, other.node, *node->value - *other.node->value);
     }
 
-    AutoDf<ScalarType>& operator-=(AutoDf<ScalarType>& other)
+    AutoDf<ScalarType>& operator-=(const AutoDf<ScalarType>& other)
     {
         return InPlaceOperator(AutoType::kSumType, other.node, *node->value - *other.node->value);
     }
@@ -330,9 +330,9 @@ class AutoDf
 
 
 #define OPERATOR_WITH_SCALAR(op)\
-    friend AutoDf<ScalarType>&& operator op (AutoDf<ScalarType>& other, const ScalarType scalar_value); \
+    friend AutoDf<ScalarType>&& operator op (const AutoDf<ScalarType>& other, const ScalarType scalar_value); \
     friend AutoDf<ScalarType>&& operator op (AutoDf<ScalarType>&& other, const ScalarType scalar_value); \
-    friend AutoDf<ScalarType>&& operator op (const ScalarType scalar_value, AutoDf<ScalarType>& other); \
+    friend AutoDf<ScalarType>&& operator op (const ScalarType scalar_value, const AutoDf<ScalarType>& other); \
     friend AutoDf<ScalarType>&& operator op (const ScalarType scalar_value, AutoDf<ScalarType>&& other);
 
     OPERATOR_WITH_SCALAR(+);
@@ -341,10 +341,21 @@ class AutoDf
     OPERATOR_WITH_SCALAR(/);
 #undef OPERATOR_WITH_SCALAR
 
+#define OPERATOR_WITH_OTHER(op)\
+    friend AutoDf<ScalarType>&& operator op (const AutoDf<ScalarType>& left, const AutoDf<ScalarType>& right); \
+    friend AutoDf<ScalarType>&& operator op (const AutoDf<ScalarType>&& left, const AutoDf<ScalarType>&& right); \
+    friend AutoDf<ScalarType>&& operator op (const AutoDf<ScalarType>& left, const AutoDf<ScalarType>&& right); \
+    friend AutoDf<ScalarType>&& operator op (const AutoDf<ScalarType>&& left, const AutoDf<ScalarType>& right);
+
+    OPERATOR_WITH_OTHER(+);
+    OPERATOR_WITH_OTHER(-);
+    OPERATOR_WITH_OTHER(*);
+    OPERATOR_WITH_OTHER(/);
+#undef OPERATOR_WITH_OTHER
 
   private:
     AutoDf<ScalarType>& InPlaceOperator(const AutoType& type,
-                                        std::shared_ptr<CallGraphNode>& right_node,
+                                        const std::shared_ptr<CallGraphNode>& right_node,
                                         const ScalarType new_value)
     {
         auto result = std::make_shared<CallGraphNode>(++id_increment, type, new_value);
@@ -355,7 +366,7 @@ class AutoDf
         return *this;
     }
 
-    static AutoDf<ScalarType>&& make_sum(std::shared_ptr<CallGraphNode>& left, std::shared_ptr<CallGraphNode>& right)
+    static AutoDf<ScalarType>&& make_sum(const std::shared_ptr<CallGraphNode>& left, const std::shared_ptr<CallGraphNode>& right)
     {
         AutoDf<ScalarType>* out = new AutoDf<ScalarType>(AutoType::kSumType, left, right);
         *out->node->value = *left->value + *right->value;
@@ -363,7 +374,7 @@ class AutoDf
         return std::move(*out);
     }
 
-    static AutoDf<ScalarType>&& make_sub(std::shared_ptr<CallGraphNode>& left, std::shared_ptr<CallGraphNode>& right)
+    static AutoDf<ScalarType>&& make_sub(const std::shared_ptr<CallGraphNode>& left, const std::shared_ptr<CallGraphNode>& right)
     {
         AutoDf<ScalarType>* out = new AutoDf<ScalarType>(AutoType::kSubtractType, left, right);
         *out->node->value = *left->value - *right->value;
@@ -371,7 +382,7 @@ class AutoDf
         return std::move(*out);
     }
 
-    static AutoDf<ScalarType>&& make_mult(std::shared_ptr<CallGraphNode>& left, std::shared_ptr<CallGraphNode>& right)
+    static AutoDf<ScalarType>&& make_mult(const std::shared_ptr<CallGraphNode>& left, const std::shared_ptr<CallGraphNode>& right)
     {
         AutoDf<ScalarType>* out = new AutoDf<ScalarType>(AutoType::kMultType, left, right);
         *out->node->value = *left->value * *right->value;
@@ -379,7 +390,7 @@ class AutoDf
         return std::move(*out);
     }
 
-    static AutoDf<ScalarType>&& make_div(std::shared_ptr<CallGraphNode>& left, std::shared_ptr<CallGraphNode>& right)
+    static AutoDf<ScalarType>&& make_div(const std::shared_ptr<CallGraphNode>& left, const std::shared_ptr<CallGraphNode>& right)
     {
         AutoDf<ScalarType>* out = new AutoDf<ScalarType>(AutoType::kDivType, left, right);
         *out->node->value = *left->value / *right->value;
@@ -408,7 +419,7 @@ template <typename ScalarType>
 typename AutoDf<ScalarType>::AutoType AutoDf<ScalarType>::default_type_ = AutoDf<ScalarType>::AutoType::kVariableType;
 
 #define OPERATOR_WITH_SCALAR(OP, func) \
-AutoDf<float>&& operator OP (AutoDf<float>& other, const float scalar_value)\
+AutoDf<float>&& operator OP (const AutoDf<float>& other, const float scalar_value)\
 {\
     AutoDf<float> scalar(scalar_value, true);\
     return std::move(AutoDf<float>::func(other.node, scalar.node));\
@@ -418,7 +429,7 @@ AutoDf<float>&& operator OP (AutoDf<float>&& other, const float scalar_value)\
     AutoDf<float> scalar(scalar_value, true);\
     return std::move(AutoDf<float>::func(other.node, scalar.node));\
 }\
-AutoDf<float>&& operator OP (const float scalar_value, AutoDf<float>& other)\
+AutoDf<float>&& operator OP (const float scalar_value, const AutoDf<float>& other)\
 {\
     AutoDf<float> scalar(scalar_value, true);\
     return AutoDf<float>::func(scalar.node, other.node);\
@@ -434,6 +445,31 @@ OPERATOR_WITH_SCALAR(- , make_sub);
 OPERATOR_WITH_SCALAR(* , make_mult);
 OPERATOR_WITH_SCALAR(/ , make_div);
 #undef OPERATOR_WITH_SCALAR
+
+#define OPERATOR_WITH_OTHER(OP, func) \
+AutoDf<float>&& operator OP (const AutoDf<float>& left, const AutoDf<float>& right)\
+{\
+    return std::move(AutoDf<float>::func(left.node, right.node));\
+}\
+AutoDf<float>&& operator OP (const AutoDf<float>&& left, const AutoDf<float>&& right)\
+{\
+    return std::move(AutoDf<float>::func(left.node, right.node));\
+}\
+AutoDf<float>&& operator OP (const AutoDf<float>& left, const AutoDf<float>&& right)\
+{\
+    return std::move(AutoDf<float>::func(left.node, right.node));\
+}\
+AutoDf<float>&& operator OP (const AutoDf<float>&& left, const AutoDf<float>& right)\
+{\
+    return std::move(AutoDf<float>::func(left.node, right.node));\
+}
+
+
+OPERATOR_WITH_OTHER(+ , make_sum);
+OPERATOR_WITH_OTHER(- , make_sub);
+OPERATOR_WITH_OTHER(* , make_mult);
+OPERATOR_WITH_OTHER(/ , make_div);
+#undef OPERATOR_WITH_OTHER
 
 
 template <>
