@@ -38,27 +38,64 @@ TEST(AutoDfPGA3DTest, SimpleTest)
     APGA aa = e0 * x;
 
     APGA p = point(x, y, z);
-//
     auto p_sq = p*p;
     auto vars1 = p_sq[0].variables();
     EXPECT_EQ(vars1.size(), 3);
     EXPECT_EQ(p_sq[0].value(), -1);
-//    x = 3.F;
-//    auto vars2 = p_sq[0].eval();
-//    EXPECT_EQ(vars2.derivatives.size(), 3);
+
+    auto p_sq_dx = p_sq[0].eval();
+    EXPECT_EQ(p_sq_dx.derivatives.size(), 3);
+}
 
 
-//    Multivector<elems::multiplication(elems::PointElems, elems::PointElems), Float> Xn = X * X;
-//    EXPECT_EQ(Xn.scalar(), -1.F);
-//    EXPECT_EQ(Xn.scalar().value(), -1.F);
-//    auto variables = Xn.scalar().variables();
-//    EXPECT_EQ(variables.size(), 3);
-//    auto xv = variables[x.ID];
-//    std::cout << *xv << std::endl;
+TEST(AutoDfPGA3DTest, TryTranslatorOptimizationTest)
+{
+    Float::SetType(Float::AutoType::kConstType);
+    APGA p0 = point(Float(0.F), Float(0.F), Float(0.F));
+    APGA p1 = point(Float(1.F), Float(1.F), Float(1.F));
+    const APGA e01(kE01);
+    const APGA e02(kE02);
+    const APGA e03(kE03);
 
-//    EXPECT_EQ(variables[x.ID], x.value());
-//    EXPECT_EQ(variables[y.ID], y.value());
-//    EXPECT_EQ(variables[z.ID], z.value());
+    Float::SetType(Float::AutoType::kVariableType);
+    Float x = 0.F;
+    Float y = 0.F;
+    Float z = 0.F;
+    Float::SetType(Float::AutoType::kConstType);
+
+    APGA translator = x*e01 + y*e02 + z*e03 + APGA(kScalar);
+
+    auto p_diff = ~(translator*p0*~translator) & ~ p1;
+    auto err = p_diff * p_diff;
+
+    auto vars = err[0].variables();
+    EXPECT_EQ(vars.size(), 3);
+
+    auto err_dx = err[0].eval();
+    EXPECT_EQ(err[0].value(), err_dx.value);
+    EXPECT_EQ(err_dx.derivatives.size(), 3);
+
+    size_t i = 0;
+
+    //std::cout << "transl#" << i << ": "; translator.log();
+    std::cout << "error#" << i << ": " << err_dx.value << std::endl;
+
+
+    float err_prev = std::abs(err_dx.value) + 1.F;
+    const float learning_rate = -0.01;
+
+    while(std::abs(err_dx.value) < err_prev && i < 20)
+    {
+        err_prev = std::abs(err_dx.value);
+        i ++;
+        x.value() -= err_dx.derivatives[x.ID] * learning_rate;
+        y.value() -= err_dx.derivatives[y.ID] * learning_rate;
+        z.value() -= err_dx.derivatives[z.ID] * learning_rate;
+
+        err_dx = err[0].eval();
+        //std::cout << "transl#" << i << ": "; translator.log();
+        std::cout << "error#" << i << ": " << err_dx.value << std::endl;
+    }
 
 
 }

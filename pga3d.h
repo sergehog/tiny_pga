@@ -9,10 +9,8 @@
 
 #define PI 3.14159265358979323846
 
-static const char* basis[] =
-    {"1", "e0", "e1", "e2", "e3", "e01", "e02", "e03", "e12", "e31", "e23", "e021", "e013", "e032", "e123", "e0123"};
 
-enum Basis :  std::size_t
+enum Basis : std::size_t
 {
     kScalar,
     kE0,
@@ -32,39 +30,33 @@ enum Basis :  std::size_t
     kE0123
 };
 
-
 template <typename ScalarType = float>
 class PGA3D
 {
   private:
-    std::array<ScalarType, 16> mvec ;
+    std::array<ScalarType, 16> mvec;
 
   public:
-    PGA3D() : mvec{}
-    {
-    }
+    PGA3D() : mvec{} {}
 
-    PGA3D(ScalarType f, Basis idx = kScalar) : mvec{}
-    {
-        mvec[idx] = f;
-    }
+    PGA3D(ScalarType f, Basis idx = kScalar) : mvec{} { mvec[idx] = f; }
 
-    PGA3D(Basis idx): mvec{}
-    {
-        mvec[idx] = 1.F;
-    }
+    PGA3D(Basis idx) : mvec{} { mvec[idx] = 1.F; }
 
     ScalarType& operator[](size_t idx) { return mvec[idx]; }
     const ScalarType& operator[](size_t idx) const { return mvec[idx]; }
 
     PGA3D log()
     {
+        static const char* basis[] =
+            {"1", "e0", "e1", "e2", "e3", "e01", "e02", "e03", "e12", "e31", "e23", "e021", "e013", "e032", "e123", "e0123"};
+
         int n = 0;
         for (int i = 0, j = 0; i < 16; i++)
-            if (mvec[i] != 0.0f)
+            if (float(mvec[i]) != 0.0f)
             {
                 n++;
-                printf("%s%0.7g%s", (j > 0) ? " + " : "", mvec[i], (i == 0) ? "" : basis[i]);
+                printf("%s%0.7g%s", (j > 0) ? " + " : "", float(mvec[i]), (i == 0) ? "" : basis[i]);
                 j++;
             };
         if (n == 0)
@@ -124,9 +116,7 @@ class PGA3D
     float inorm() { return (!(*this)).norm(); }
 
     PGA3D<ScalarType> normalized() { return (*this) * (1 / norm()); }
-
 };
-
 
 /// Reverse the order of the basis blades. : res = ~a
 template <typename ScalarType = float>
@@ -180,7 +170,7 @@ inline PGA3D<ScalarType> operator!(const PGA3D<ScalarType>& a)
 template <typename ScalarType = float>
 inline PGA3D<ScalarType> operator*(const PGA3D<ScalarType>& a, const PGA3D<ScalarType>& b)
 {
-    PGA3D<ScalarType> res {};
+    PGA3D<ScalarType> res{};
     res[0] = b[0] * a[0] + b[2] * a[2] + b[3] * a[3] + b[4] * a[4] - b[8] * a[8] - b[9] * a[9] - b[10] * a[10] -
              b[14] * a[14];
     res[1] = b[1] * a[0] + b[0] * a[1] + b[2] * a[5] - b[5] * a[2] + b[3] * a[6] - b[6] * a[3] + b[4] * a[7] -
@@ -223,7 +213,6 @@ inline PGA3D<ScalarType> operator*(const PGA3D<ScalarType>& a, const PGA3D<Scala
               b[1] * a[14] + b[0] * a[15];
     return res;
 };
-
 
 /// The outer  product. Also known as Wedge or MEET : res = a ^ b
 template <typename ScalarType = float>
@@ -342,7 +331,6 @@ inline PGA3D<ScalarType> operator+(const PGA3D<ScalarType>& a, const PGA3D<Scala
     return res;
 };
 
-
 /// Multivector subtraction : res = a - b
 template <typename ScalarType = float>
 inline PGA3D<ScalarType> operator-(const PGA3D<ScalarType>& a, const PGA3D<ScalarType>& b)
@@ -390,7 +378,6 @@ inline PGA3D<ScalarType> operator*(const ScalarType& a, const PGA3D<ScalarType>&
     res[15] = a * b[15];
     return res;
 };
-
 
 /// multivector/scalar multiplication : res = a * b
 template <typename ScalarType = float>
@@ -557,7 +544,12 @@ static PGA3D<ScalarType> circle(ScalarType t, ScalarType radius, PGA3D<ScalarTyp
 
 // a torus is now the product of two circles.
 template <typename ScalarType = float>
-static PGA3D<ScalarType> torus(ScalarType s, ScalarType t, ScalarType r1, PGA3D<ScalarType> l1, ScalarType r2, PGA3D<ScalarType> l2)
+static PGA3D<ScalarType> torus(ScalarType s,
+                               ScalarType t,
+                               ScalarType r1,
+                               PGA3D<ScalarType> l1,
+                               ScalarType r2,
+                               PGA3D<ScalarType> l2)
 {
     return circle(s, r2, l2) * circle(t, r1, l1);
 }

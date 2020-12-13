@@ -227,14 +227,20 @@ class AutoDf
     AutoDf() : ID(++id_increment)
     {
         node = std::make_shared<CallGraphNode>(ID, default_type_);
-        node->variables[node->ID] = node->value;
+        if(default_type_ == AutoType::kVariableType)
+        {
+            node->variables[node->ID] = node->value;
+        }
     }
 
     /// Create kVariableType from ScalarType
     AutoDf(const ScalarType& value) : ID(++id_increment)
     {
         node = std::make_shared<CallGraphNode>(ID, default_type_, value);
-        node->variables[node->ID] = node->value;
+        if(default_type_ == AutoType::kVariableType)
+        {
+            node->variables[node->ID] = node->value;
+        }
     }
 
     /// Moving Ctor from rvalue -> takes ownership of everything
@@ -254,17 +260,11 @@ class AutoDf
         node = std::make_shared<CallGraphNode>(ID, type, value);
     }
 
-//    AutoDf& operator=(const ScalarType& scalar)
-//    {
-//        *node->value = scalar;
-////        if(node->type == AutoType::kConstType)
-////        {
-////            node->type = AutoType::kVariableType;
-////            node->variables[ID] = node->value;
-////        }
-//        return *this;
-//    }
-
+    AutoDf& operator=(const ScalarType& scalar)
+    {
+        *node->value = scalar;
+        return *this;
+    }
 
     AutoDf<ScalarType>& operator=(AutoDf<ScalarType>&& other)
     {
@@ -272,6 +272,11 @@ class AutoDf
         return *this;
     }
 
+    AutoDf<ScalarType>& operator=(const AutoDf<ScalarType>& other)
+    {
+        node = other.node;
+        return *this;
+    }
 
     /// List of input "mutable" values, contributing to this AutoDf value
     std::map<size_t, std::shared_ptr<ScalarType>>& variables() { return node->variables; }
@@ -285,16 +290,6 @@ class AutoDf
     /// Retrieves latest calculated value
     ScalarType& value() const { return *node->value; }
     explicit operator ScalarType() const { return *node->value; }
-
-//    AutoDf<ScalarType>&& operator+(const AutoDf<ScalarType>& other) { return make_sum(node, other.node); }
-//    AutoDf<ScalarType>&& operator+(AutoDf<ScalarType>&& other) { return make_sum(node, other.node); }
-//    AutoDf<ScalarType>&& operator-(const AutoDf<ScalarType>& other) { return make_sub(node, other.node); }
-//    AutoDf<ScalarType>&& operator-(AutoDf<ScalarType>&& other) { return make_sub(node, other.node); }
-//    AutoDf<ScalarType>&& operator*(const AutoDf<ScalarType>& other) { return make_mult(node, other.node); }
-//    AutoDf<ScalarType>&& operator*(AutoDf<ScalarType>&& other) { return make_mult(node, other.node); }
-//    AutoDf<ScalarType>&& operator/(const AutoDf<ScalarType>& other) { return make_div(node, other.node); }
-//    AutoDf<ScalarType>&& operator/(AutoDf<ScalarType>&& other) { return make_div(node, other.node); }
-
 
     AutoDf<ScalarType>& operator+=(const ScalarType value)
     {
@@ -328,7 +323,6 @@ class AutoDf
         return InPlaceOperator(AutoType::kSumType, other.node, *node->value - *other.node->value);
     }
 
-
 #define OPERATOR_WITH_SCALAR(op)\
     friend AutoDf<ScalarType>&& operator op (const AutoDf<ScalarType>& other, const ScalarType scalar_value); \
     friend AutoDf<ScalarType>&& operator op (AutoDf<ScalarType>&& other, const ScalarType scalar_value); \
@@ -352,6 +346,8 @@ class AutoDf
     OPERATOR_WITH_OTHER(*);
     OPERATOR_WITH_OTHER(/);
 #undef OPERATOR_WITH_OTHER
+
+    template<typename T> friend AutoDf<T>&& operator- (AutoDf<T> const& other);
 
   private:
     AutoDf<ScalarType>& InPlaceOperator(const AutoType& type,
@@ -413,6 +409,13 @@ class AutoDf
         }
     }
 };
+
+template <typename ScalarType>
+AutoDf<ScalarType>&& operator- (AutoDf<ScalarType> const& other)
+{
+    AutoDf<ScalarType> zero(0, true);
+    return std::move(AutoDf<float>::make_sub(zero.node, other.node));
+}
 
 /// By-default, all created AutoDf considered to be Variables
 template <typename ScalarType>
