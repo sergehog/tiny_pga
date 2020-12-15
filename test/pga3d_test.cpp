@@ -70,22 +70,20 @@ TEST(PGA3DTest, BasicTest)
     point_on_torus(0.0f, 0.0f).log();
     (e0 - 1.0f).log();
     (1.0f - e0).log();
-
 }
 
 TEST(PGA3DTest, MotorEstimatorTest)
 {
     PGA3D<> A = point(0.F, 0.F, 0.F);
     PGA3D<> B = point(1.F, 0.F, 0.F);
-    PGA3D<> C = point(0.F,1.F, 0.F);
+    PGA3D<> C = point(0.F, 1.F, 0.F);
 
     PGA3D<> A1 = point(1.F, 1.F, 1.F);
     PGA3D<> B1 = point(1.F, 2.F, 1.F);
     PGA3D<> C1 = point(1.F, 1.F, 2.F);
 
-
     // Va = sqrt(Ai/A);
-    auto Va = (1.F + (A1*~A)).normalized();
+    auto Va = (1.F + (A1 * ~A)).normalized();
     std::cout << "Va = ";
     Va.log();
 
@@ -93,15 +91,15 @@ TEST(PGA3DTest, MotorEstimatorTest)
     std::cout << "Ba = ";
     Ba.log();
 
-    auto Vb_squared = (A1 & B1)* ~(A1 & Ba);
+    auto Vb_squared = (A1 & B1) * ~(A1 & Ba);
     std::cout << "Vb_squared = ";
     Vb_squared.log();
 
-    auto Vb = (1 + Vb_squared).normalized();  //Vb = sqrt(Vb_squared);
+    auto Vb = (1 + Vb_squared).normalized();  // Vb = sqrt(Vb_squared);
     std::cout << "Vb = ";
     Vb.log();
 
-    auto Cba = Vb*Va*C*~Va*~Vb;
+    auto Cba = Vb * Va * C * ~Va * ~Vb;
     std::cout << "Cba = ";
     Cba.log();
 
@@ -109,7 +107,7 @@ TEST(PGA3DTest, MotorEstimatorTest)
     std::cout << "Vc_squared = ";
     Vc_squared.log();
 
-    auto Vc = (1 + Vc_squared).normalized();  //Vc = sqrt(Vc_squared);
+    auto Vc = (1 + Vc_squared).normalized();  // Vc = sqrt(Vc_squared);
     std::cout << "Vc = ";
     Vc.log();
 
@@ -117,18 +115,15 @@ TEST(PGA3DTest, MotorEstimatorTest)
     std::cout << "V = ";
     V.log();
 
-    auto Ai = V * A * ~V;
-    std::cout << "Ai = ";
+    auto Ai = V * A * ~V - A1;
+    std::cout << "V*A*~V - A1 = ";
     Ai.log();
 
-    auto Bi = V * B * ~V;
-    std::cout << "Bi = ";
+    auto Bi = V * B * ~V - B1;
+    std::cout << "V*B*~V - B1 = ";
     Bi.log();
 
-    auto Ci = V * C * ~V;
-    std::cout << "Ci = ";
+    auto Ci = V * C * ~V - C1;
+    std::cout << "V*C*~V - C1 = ";
     Ci.log();
-
 }
-
-

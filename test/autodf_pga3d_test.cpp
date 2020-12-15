@@ -57,9 +57,6 @@ TEST(AutoDfPGA3DTest, TryTranslatorOptimizationTest)
     APGA B1 = point(Float(1.F), Float(2.F), Float(1.F));
     APGA C1 = point(Float(1.F), Float(1.F), Float(2.F));
 
-    // APGA p0 = point(Float(0.F), Float(0.F), Float(0.F));
-    // APGA p1 = point(Float(1.F), Float(1.F), Float(1.F));
-
     const APGA e12(kE12);
     const APGA e31(kE31);
     const APGA e23(kE23);
@@ -104,9 +101,9 @@ TEST(AutoDfPGA3DTest, TryTranslatorOptimizationTest)
               << x.value() << "," << y.value() << "," << z.value() << "," << i.value() << "]" << std::endl;
 
     float err_prev = std::abs(eval.value) + 1.F;
-    const float learning_rate = 0.001;
+    const float learning_rate = 0.02;
 
-    while (std::abs(eval.value) < err_prev && j < 100)
+    while (std::abs(eval.value) < err_prev && j < 200)
     {
         err_prev = std::abs(eval.value);
 
@@ -126,4 +123,17 @@ TEST(AutoDfPGA3DTest, TryTranslatorOptimizationTest)
         std::cout << "motor: [(" << w.value() << "," << a.value() << "," << b.value() << "," << c.value() << "),"
                   << x.value() << "," << y.value() << "," << z.value() << "," << i.value() << "]" << std::endl;
     }
+
+    APGA V = w * APGA(kScalar) + a * e12 + b * e31 + c * e23 + x * e01 + y * e02 + z * e03 + i * I;
+    auto Ai = V * A * ~V - A1;
+    std::cout << "V*A*~V - A1 = [" << Ai[kE013].value() << "," << Ai[kE021].value() << "," << Ai[kE032].value() << "]"
+              << std::endl;
+
+    auto Bi = V * B * ~V - B1;
+    std::cout << "V*B*~V - B1 = [" << Bi[kE013].value() << "," << Bi[kE021].value() << "," << Bi[kE032].value() << "]"
+              << std::endl;
+
+    auto Ci = V * C * ~V - C1;
+    std::cout << "V*C*~V - C1 = [" << Ci[kE013].value() << "," << Ci[kE021].value() << "," << Ci[kE032].value() << "]"
+              << std::endl;
 }
