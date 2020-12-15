@@ -15,9 +15,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include "../tiny_autodf.h"
 #include "../pga3d.h"
+#include "../tiny_autodf.h"
 #include <gtest/gtest.h>
 
 using namespace tiny_autodf;
@@ -38,7 +37,7 @@ TEST(AutoDfPGA3DTest, SimpleTest)
     APGA aa = e0 * x;
 
     APGA p = point(x, y, z);
-    auto p_sq = p*p;
+    auto p_sq = p * p;
     auto vars1 = p_sq[0].variables();
     EXPECT_EQ(vars1.size(), 3);
     EXPECT_EQ(p_sq[0].value(), -1);
@@ -47,55 +46,84 @@ TEST(AutoDfPGA3DTest, SimpleTest)
     EXPECT_EQ(p_sq_dx.derivatives.size(), 3);
 }
 
-
 TEST(AutoDfPGA3DTest, TryTranslatorOptimizationTest)
 {
     Float::SetType(Float::AutoType::kConstType);
-    APGA p0 = point(Float(0.F), Float(0.F), Float(0.F));
-    APGA p1 = point(Float(1.F), Float(1.F), Float(1.F));
+    APGA A = point(Float(0.F), Float(0.F), Float(0.F));
+    APGA B = point(Float(1.F), Float(0.F), Float(0.F));
+    APGA C = point(Float(0.F), Float(1.F), Float(0.F));
+
+    APGA A1 = point(Float(1.F), Float(1.F), Float(1.F));
+    APGA B1 = point(Float(1.F), Float(2.F), Float(1.F));
+    APGA C1 = point(Float(1.F), Float(1.F), Float(2.F));
+
+    // APGA p0 = point(Float(0.F), Float(0.F), Float(0.F));
+    // APGA p1 = point(Float(1.F), Float(1.F), Float(1.F));
+
+    const APGA e12(kE12);
+    const APGA e31(kE31);
+    const APGA e23(kE23);
     const APGA e01(kE01);
     const APGA e02(kE02);
     const APGA e03(kE03);
+    const APGA I(kE0123);
 
     Float::SetType(Float::AutoType::kVariableType);
-    Float x = 0.F;
-    Float y = 0.F;
-    Float z = 0.F;
+    Float w = 0.1F;
+    Float a = 0.1F;
+    Float b = 0.1F;
+    Float c = 0.1F;
+    Float x = 0.1F;
+    Float y = 0.1F;
+    Float z = 0.1F;
+    Float i = 0.1F;
+
     Float::SetType(Float::AutoType::kConstType);
 
-    APGA translator = x*e01 + y*e02 + z*e03 + APGA(kScalar);
+    APGA motor = w * APGA(kScalar) + a * e12 + b * e31 + c * e23 + x * e01 + y * e02 + z * e03 + i * I;
 
-    auto p_diff = ~(translator*p0*~translator) & ~ p1;
-    auto err = p_diff * p_diff;
+    auto a_diff = motor * A * ~motor - A1;
+    auto b_diff = motor * B * ~motor - B1;
+    auto c_diff = motor * C * ~motor - C1;
 
-    auto vars = err[0].variables();
-    EXPECT_EQ(vars.size(), 3);
+    auto err = a_diff[kE013] * a_diff[kE013] + a_diff[kE021] * a_diff[kE021] + a_diff[kE032] * a_diff[kE032];
+    err += b_diff[kE013] * b_diff[kE013] + b_diff[kE021] * b_diff[kE021] + b_diff[kE032] * b_diff[kE032];
+    err += c_diff[kE013] * c_diff[kE013] + c_diff[kE021] * c_diff[kE021] + c_diff[kE032] * c_diff[kE032];
 
-    auto err_dx = err[0].eval();
-    EXPECT_EQ(err[0].value(), err_dx.value);
-    EXPECT_EQ(err_dx.derivatives.size(), 3);
+    auto vars = err.variables();
+    EXPECT_EQ(vars.size(), 8);
 
-    size_t i = 0;
+    auto eval = err.eval();
+    EXPECT_EQ(err.value(), eval.value);
+    EXPECT_EQ(eval.derivatives.size(), 8);
 
-    //std::cout << "transl#" << i << ": "; translator.log();
-    std::cout << "error#" << i << ": " << err_dx.value << std::endl;
+    size_t j = 0;
 
+    std::cout << "error#" << j << ": " << eval.value << std::endl;
+    std::cout << "motor: [(" << w.value() << "," << a.value() << "," << b.value() << "," << c.value() << "),"
+              << x.value() << "," << y.value() << "," << z.value() << "," << i.value() << "]" << std::endl;
 
-    float err_prev = std::abs(err_dx.value) + 1.F;
-    const float learning_rate = -0.01;
+    float err_prev = std::abs(eval.value) + 1.F;
+    const float learning_rate = 0.001;
 
-    while(std::abs(err_dx.value) < err_prev && i < 20)
+    while (std::abs(eval.value) < err_prev && j < 100)
     {
-        err_prev = std::abs(err_dx.value);
-        i ++;
-        x.value() -= err_dx.derivatives[x.ID] * learning_rate;
-        y.value() -= err_dx.derivatives[y.ID] * learning_rate;
-        z.value() -= err_dx.derivatives[z.ID] * learning_rate;
+        err_prev = std::abs(eval.value);
 
-        err_dx = err[0].eval();
-        //std::cout << "transl#" << i << ": "; translator.log();
-        std::cout << "error#" << i << ": " << err_dx.value << std::endl;
+        w.value() -= eval.derivatives[w.ID] * learning_rate;
+        a.value() -= eval.derivatives[a.ID] * learning_rate;
+        b.value() -= eval.derivatives[b.ID] * learning_rate;
+        c.value() -= eval.derivatives[c.ID] * learning_rate;
+        x.value() -= eval.derivatives[x.ID] * learning_rate;
+        y.value() -= eval.derivatives[y.ID] * learning_rate;
+        z.value() -= eval.derivatives[z.ID] * learning_rate;
+        i.value() -= eval.derivatives[i.ID] * learning_rate;
+        j++;
+
+        eval = err.eval();
+
+        std::cout << "error#" << j << ": " << eval.value << std::endl;
+        std::cout << "motor: [(" << w.value() << "," << a.value() << "," << b.value() << "," << c.value() << "),"
+                  << x.value() << "," << y.value() << "," << z.value() << "," << i.value() << "]" << std::endl;
     }
-
-
 }
