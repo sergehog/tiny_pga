@@ -1,40 +1,54 @@
-// This code was originally copied from bivector.net
-// Copyright and License are unknown
-
 // 3D Projective Geometric Algebra
 // Written by a generator written by enki.
+
+/*
+ * This file is part of the Tiny-PGA distribution (https://github.com/sergehog/tiny_pga)
+ * Copyright (c) 2020 Sergey Smirnov / Seregium Oy.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <stdio.h>
 #include <array>
 #include <cmath>
 
 #define PI 3.14159265358979323846
 
-
 enum Basis : std::size_t
 {
     kScalar = 0U,
     kE0 = 1U,
-    kE1  = 2U,
-    kNX = kE1, // alias for plane x-normal
+    kE1 = 2U,
+    kNX = kE1,  // alias for plane x-normal
     kE2 = 3U,
-    kNY = kE2, // alias for plane y-normal
+    kNY = kE2,  // alias for plane y-normal
     kE3 = 4U,
-    kNZ = kE3, // alias for plane z-normal
-    kE01 = 5U, // X offset for line
-    kE02 = 6U, // Y offset for line
-    kE03 = 7U, // Z offset for line
+    kNZ = kE3,  // alias for plane z-normal
+    kE01 = 5U,  // X offset for line
+    kE02 = 6U,  // Y offset for line
+    kE03 = 7U,  // Z offset for line
     kE12 = 8U,
-    kAX = kE12, // bivector for X direction ?? WTF
+    kAX = kE12,  // bivector for X direction ?? WTF
     kE31 = 9U,
-    kAY = kE12, // bivector for Y direction
+    kAY = kE12,  // bivector for Y direction
     kE23 = 10U,
-    kAZ = kE23, // bivector for Z direction ?? WTF
+    kAZ = kE23,  // bivector for Z direction ?? WTF
     kE021 = 11U,
-    kX = kE23, // X coordinate for a point
+    kX = kE23,  // X coordinate for a point
     kE013 = 12U,
-    kY = kE23, // Y coordinate for a point
+    kY = kE23,  // Y coordinate for a point
     kE032 = 13U,
-    kZ = kE23, // Z coordinate for a point
+    kZ = kE23,  // Z coordinate for a point
     kE123 = 14U,
     kE0123 = 15U
 };
@@ -101,7 +115,9 @@ class PGA3D
         return res;
     };
 
-    float norm() { return sqrt(std::abs(float(((*this) * Conjugate()).mvec[0]))); }
+    PGA3D<ScalarType> sqrt() { return (1.F + *this).normalized(); }
+
+    float norm() { return std::sqrt(std::abs(float(((*this) * Conjugate()).mvec[0]))); }
 
     float inorm() { return (!(*this)).norm(); }
 
@@ -239,28 +255,28 @@ template <typename ScalarType = float>
 inline PGA3D<ScalarType> operator&(const PGA3D<ScalarType>& a, const PGA3D<ScalarType>& b)
 {
     PGA3D<ScalarType> res;
-    res[15] = 1 * (a[15] * b[15]);
-    res[14] = -1 * (a[14] * -1 * b[15] + a[15] * b[14] * -1);
-    res[13] = -1 * (a[13] * -1 * b[15] + a[15] * b[13] * -1);
-    res[12] = -1 * (a[12] * -1 * b[15] + a[15] * b[12] * -1);
-    res[11] = -1 * (a[11] * -1 * b[15] + a[15] * b[11] * -1);
-    res[10] = 1 * (a[10] * b[15] + a[13] * -1 * b[14] * -1 - a[14] * -1 * b[13] * -1 + a[15] * b[10]);
-    res[9] = 1 * (a[9] * b[15] + a[12] * -1 * b[14] * -1 - a[14] * -1 * b[12] * -1 + a[15] * b[9]);
-    res[8] = 1 * (a[8] * b[15] + a[11] * -1 * b[14] * -1 - a[14] * -1 * b[11] * -1 + a[15] * b[8]);
-    res[7] = 1 * (a[7] * b[15] + a[12] * -1 * b[13] * -1 - a[13] * -1 * b[12] * -1 + a[15] * b[7]);
-    res[6] = 1 * (a[6] * b[15] - a[11] * -1 * b[13] * -1 + a[13] * -1 * b[11] * -1 + a[15] * b[6]);
-    res[5] = 1 * (a[5] * b[15] + a[11] * -1 * b[12] * -1 - a[12] * -1 * b[11] * -1 + a[15] * b[5]);
-    res[4] = 1 * (a[4] * b[15] - a[7] * b[14] * -1 + a[9] * b[13] * -1 - a[10] * b[12] * -1 - a[12] * -1 * b[10] +
-                  a[13] * -1 * b[9] - a[14] * -1 * b[7] + a[15] * b[4]);
-    res[3] = 1 * (a[3] * b[15] - a[6] * b[14] * -1 - a[8] * b[13] * -1 + a[10] * b[11] * -1 + a[11] * -1 * b[10] -
-                  a[13] * -1 * b[8] - a[14] * -1 * b[6] + a[15] * b[3]);
-    res[2] = 1 * (a[2] * b[15] - a[5] * b[14] * -1 + a[8] * b[12] * -1 - a[9] * b[11] * -1 - a[11] * -1 * b[9] +
-                  a[12] * -1 * b[8] - a[14] * -1 * b[5] + a[15] * b[2]);
-    res[1] = 1 * (a[1] * b[15] + a[5] * b[13] * -1 + a[6] * b[12] * -1 + a[7] * b[11] * -1 + a[11] * -1 * b[7] +
-                  a[12] * -1 * b[6] + a[13] * -1 * b[5] + a[15] * b[1]);
-    res[0] = 1 * (a[0] * b[15] + a[1] * b[14] * -1 + a[2] * b[13] * -1 + a[3] * b[12] * -1 + a[4] * b[11] * -1 +
-                  a[5] * b[10] + a[6] * b[9] + a[7] * b[8] + a[8] * b[7] + a[9] * b[6] + a[10] * b[5] -
-                  a[11] * -1 * b[4] - a[12] * -1 * b[3] - a[13] * -1 * b[2] - a[14] * -1 * b[1] + a[15] * b[0]);
+    res[15] = (a[15] * b[15]);
+    res[14] = -(a[14] * -1 * b[15] + a[15] * b[14] * -1);
+    res[13] = -(a[13] * -1 * b[15] + a[15] * b[13] * -1);
+    res[12] = -(a[12] * -1 * b[15] + a[15] * b[12] * -1);
+    res[11] = -(a[11] * -1 * b[15] + a[15] * b[11] * -1);
+    res[10] = (a[10] * b[15] + a[13] * -1 * b[14] * -1 - a[14] * -1 * b[13] * -1 + a[15] * b[10]);
+    res[9] = (a[9] * b[15] + a[12] * -1 * b[14] * -1 - a[14] * -1 * b[12] * -1 + a[15] * b[9]);
+    res[8] = (a[8] * b[15] + a[11] * -1 * b[14] * -1 - a[14] * -1 * b[11] * -1 + a[15] * b[8]);
+    res[7] = (a[7] * b[15] + a[12] * -1 * b[13] * -1 - a[13] * -1 * b[12] * -1 + a[15] * b[7]);
+    res[6] = (a[6] * b[15] - a[11] * -1 * b[13] * -1 + a[13] * -1 * b[11] * -1 + a[15] * b[6]);
+    res[5] = (a[5] * b[15] + a[11] * -1 * b[12] * -1 - a[12] * -1 * b[11] * -1 + a[15] * b[5]);
+    res[4] = (a[4] * b[15] - a[7] * b[14] * -1 + a[9] * b[13] * -1 - a[10] * b[12] * -1 - a[12] * -1 * b[10] +
+              a[13] * -1 * b[9] - a[14] * -1 * b[7] + a[15] * b[4]);
+    res[3] = (a[3] * b[15] - a[6] * b[14] * -1 - a[8] * b[13] * -1 + a[10] * b[11] * -1 + a[11] * -1 * b[10] -
+              a[13] * -1 * b[8] - a[14] * -1 * b[6] + a[15] * b[3]);
+    res[2] = (a[2] * b[15] - a[5] * b[14] * -1 + a[8] * b[12] * -1 - a[9] * b[11] * -1 - a[11] * -1 * b[9] +
+              a[12] * -1 * b[8] - a[14] * -1 * b[5] + a[15] * b[2]);
+    res[1] = (a[1] * b[15] + a[5] * b[13] * -1 + a[6] * b[12] * -1 + a[7] * b[11] * -1 + a[11] * -1 * b[7] +
+              a[12] * -1 * b[6] + a[13] * -1 * b[5] + a[15] * b[1]);
+    res[0] = (a[0] * b[15] + a[1] * b[14] * -1 + a[2] * b[13] * -1 + a[3] * b[12] * -1 + a[4] * b[11] * -1 +
+              a[5] * b[10] + a[6] * b[9] + a[7] * b[8] + a[8] * b[7] + a[9] * b[6] + a[10] * b[5] - a[11] * -1 * b[4] -
+              a[12] * -1 * b[3] - a[13] * -1 * b[2] - a[14] * -1 * b[1] + a[15] * b[0]);
     return res;
 };
 
@@ -548,18 +564,22 @@ static PGA3D<ScalarType> torus(ScalarType s,
 template <typename ScalarType = float>
 static PGA3D<ScalarType> point_on_torus(ScalarType s, ScalarType t)
 {
-    const PGA3D<ScalarType> e0(1.0f, kE0), e1(1.0f, kE1), e2(1.0f, kE2), e3(1.0f, kE3);
+    const PGA3D<ScalarType> e0(kE0), e1(kE1), e2(kE2), e3(kE3);
     const PGA3D<ScalarType> e123 = e1 ^ e2 ^ e3;
     PGA3D<ScalarType> to = torus(s, t, 0.25f, e1 * e2, 0.6f, e1 * e3);
     return to * e123 * ~to;
 }
 
 template <typename ScalarType = float>
-void log(const PGA3D<ScalarType>& a)
+void log(const PGA3D<ScalarType>& a, std::string name = "")
 {
-    static const char* basis[] =
-        {"1", "e0", "e1", "e2", "e3", "e01", "e02", "e03", "e12", "e31", "e23", "e021", "e013", "e032", "e123", "e0123"};
+    static const char* basis[] = {
+        "1", "e0", "e1", "e2", "e3", "e01", "e02", "e03", "e12", "e31", "e23", "e021", "e013", "e032", "e123", "e0123"};
 
+    if (!name.empty())
+    {
+        printf("%s = ", name.c_str());
+    }
     int n = 0;
     for (int i = 0, j = 0; i < 16; i++)
         if (float(a[i]) != 0.0f)
@@ -572,3 +592,32 @@ void log(const PGA3D<ScalarType>& a)
         printf("0");
     printf("\n");
 }
+
+template <typename ScalarType = float>
+PGA3D<ScalarType> motor_from_3_points_pairs(const std::array<PGA3D<ScalarType>, 3>& reference_points,
+                                            const std::array<PGA3D<ScalarType>, 3>& target_points)
+{
+    const PGA3D<>& A = reference_points[0];
+    const PGA3D<>& B = reference_points[1];
+    const PGA3D<>& C = reference_points[2];
+    const PGA3D<> A1 = target_points[0];
+    const PGA3D<> B1 = target_points[1];
+    const PGA3D<> C1 = target_points[2];
+
+    const auto Va = (A1 * ~A).sqrt();
+    const auto Ba = Va * B * ~Va;
+    const auto Vb = ((A1 & B1) * ~(A1 & Ba)).sqrt();
+    const auto Cba = Vb * Va * C * ~Va * ~Vb;
+    const auto Vc = ((A1 & B1 & C1) * ~(A1 & B1 & Cba)).sqrt();
+
+    return Vc * Vb * Va;
+}
+
+namespace float_basis
+{
+const static PGA3D<float> e0(kE0), e1(kE1), e2(kE2), e3(kE3);
+const static PGA3D<float> e01(kE01), e02(kE02), e03(kE03);
+const static PGA3D<float> e12(kE12), e23(kE23), e31(kE31);
+const static PGA3D<float> e021(kE021), e023(kE032), e013(kE013), e123(kE123);
+const static PGA3D<float> e0123(kE0123);
+};

@@ -18,13 +18,10 @@
 #include "../pga3d.h"
 #include <gtest/gtest.h>
 
+using namespace float_basis;
+
 TEST(PGA3DTest, BasicTest)
 {
-    const PGA3D<> e0(1.F, kE0);
-    const PGA3D<> e1(1.F, kE1);
-    const PGA3D<> e2(1.F, kE2);
-    const PGA3D<> e3(1.F, kE3);
-
     // Elements of the even subalgebra (scalar + bivector + pss) of unit length are motors
     PGA3D<> rot = rotor(PI / 2.0f, e1 * e2);
 
@@ -51,28 +48,28 @@ TEST(PGA3DTest, BasicTest)
 
     // Some output.
     printf("a point       : ");
-    px.log();
+    log(px);
     printf("a line        : ");
-    line.log();
+    log(line);
     printf("a plane       : ");
-    p.log();
+    log(p);
     printf("a rotor       : ");
-    rot.log();
+    log(rot);
     printf("rotated line  : ");
-    rotated_line.log();
+    log(rotated_line);
     printf("rotated point : ");
-    rotated_point.log();
+    log(rotated_point);
     printf("rotated plane : ");
-    rotated_plane.log();
+    log(rotated_plane);
     printf("point on plane: ");
-    point_on_plane.normalized().log();
+    log(point_on_plane.normalized());
     printf("point on torus: ");
-    point_on_torus(0.0f, 0.0f).log();
-    (e0 - 1.0f).log();
-    (1.0f - e0).log();
+    log(point_on_torus(0.0f, 0.0f));
+    log(e0 - 1.0f);
+    log(1.0f - e0);
 }
 
-TEST(PGA3DTest, MotorEstimatorTest)
+TEST(PGA3DTest, ConstMotorEstimatorTest)
 {
     PGA3D<> A = point(0.F, 0.F, 0.F);
     PGA3D<> B = point(1.F, 0.F, 0.F);
@@ -83,47 +80,83 @@ TEST(PGA3DTest, MotorEstimatorTest)
     PGA3D<> C1 = point(1.F, 1.F, 2.F);
 
     // Va = sqrt(Ai/A);
-    auto Va = (1.F + (A1 * ~A)).normalized();
-    std::cout << "Va = ";
-    Va.log();
+    const auto Va = (1.F + (A1 * ~A)).normalized();
+    log(Va, "Va");
 
-    auto Ba = Va * B * ~Va;
-    std::cout << "Ba = ";
-    Ba.log();
+    const auto Ba = Va * B * ~Va;
+    log(Ba, "Ba");
 
-    auto Vb_squared = (A1 & B1) * ~(A1 & Ba);
-    std::cout << "Vb_squared = ";
-    Vb_squared.log();
+    const auto Vb_squared = (A1 & B1) * ~(A1 & Ba);
+    log(Vb_squared, "Vb_squared");
 
-    auto Vb = (1 + Vb_squared).normalized();  // Vb = sqrt(Vb_squared);
-    std::cout << "Vb = ";
-    Vb.log();
+    const auto Vb = (1 + Vb_squared).normalized();  // Vb = sqrt(Vb_squared);
+    log(Vb, "Vb");
 
-    auto Cba = Vb * Va * C * ~Va * ~Vb;
-    std::cout << "Cba = ";
-    Cba.log();
+    const auto Cba = Vb * Va * C * ~Va * ~Vb;
+    log(Cba, "Cba");
 
-    auto Vc_squared = (A1 & B1 & C1) * ~(A1 & B1 & Cba);
-    std::cout << "Vc_squared = ";
-    Vc_squared.log();
+    const auto Vc_squared = (A1 & B1 & C1) * ~(A1 & B1 & Cba);
+    log(Vc_squared, "Vc_squared");
 
-    auto Vc = (1 + Vc_squared).normalized();  // Vc = sqrt(Vc_squared);
-    std::cout << "Vc = ";
-    Vc.log();
+    const auto Vc = (1 + Vc_squared).normalized();  // Vc = sqrt(Vc_squared);
+    log(Vc, "Vc");
 
-    auto V = Vc * Vb * Va;
-    std::cout << "V = ";
-    V.log();
+    const auto V = Vc * Vb * Va;
+    log(V, "V");
 
-    auto Ai = V * A * ~V - A1;
-    std::cout << "V*A*~V - A1 = ";
-    Ai.log();
+    const auto Ai = V * A * ~V - A1;
+    log(Ai, "V*A*~V - A1");
 
-    auto Bi = V * B * ~V - B1;
-    std::cout << "V*B*~V - B1 = ";
-    Bi.log();
+    const auto Bi = V * B * ~V - B1;
+    log(Bi, "V*B*~V - B1");
 
-    auto Ci = V * C * ~V - C1;
-    std::cout << "V*C*~V - C1 = ";
-    Ci.log();
+    const auto Ci = V * C * ~V - C1;
+    log(Ci, "V*C*~V - C1");
+
+    EXPECT_NEAR((Ai * Ai)[0], 0.F, 0.0001);
+    EXPECT_NEAR((Bi * Bi)[0], 0.F, 0.0001);
+    EXPECT_NEAR((Bi * Bi)[0], 0.F, 0.0001);
+}
+
+/// Estimated Motor shall be the same, despite order of given points
+TEST(PGA3DTest, MotorEstimatorStabilityTest)
+{
+    PGA3D<> A = point(1.F, 1.F, 1.F);
+    PGA3D<> B = point(2.F, 1.F, 1.F);
+    PGA3D<> C = point(1.F, 2.F, 1.F);
+
+    PGA3D<> A1 = point(-1.F, -1.F, -1.F);
+    PGA3D<> B1 = point(-1.F, -2.F, -1.F);
+    PGA3D<> C1 = point(-1.F, -1.F, -2.F);
+
+    const auto M1 = motor_from_3_points_pairs({A, B, C}, {A1, B1, C1});
+    const auto M2 = motor_from_3_points_pairs({A, C, B}, {A1, C1, B1});
+
+    EXPECT_NEAR(M1[0], M2[0], 1E-7);
+    EXPECT_NEAR(M1[kE01], M2[kE01], 1E-7);
+    EXPECT_NEAR(M1[kE02], M2[kE02], 1E-7);
+    EXPECT_NEAR(M1[kE03], M2[kE03], 1E-7);
+    EXPECT_NEAR(M1[kE12], M2[kE12], 1E-7);
+    EXPECT_NEAR(M1[kE23], M2[kE23], 1E-7);
+    EXPECT_NEAR(M1[kE31], M2[kE31], 1E-7);
+
+    const auto M3 = motor_from_3_points_pairs({C, A, B}, {C1, A1, B1});
+
+    EXPECT_NEAR(M1[0], M3[0], 1E-7);
+    EXPECT_NEAR(M1[kE01], M3[kE01], 1E-7);
+    EXPECT_NEAR(M1[kE02], M3[kE02], 1E-7);
+    EXPECT_NEAR(M1[kE03], M3[kE03], 2E-7);
+    EXPECT_NEAR(M1[kE12], M3[kE12], 1E-7);
+    EXPECT_NEAR(M1[kE23], M3[kE23], 1E-7);
+    EXPECT_NEAR(M1[kE31], M3[kE31], 1E-7);
+
+    const auto M4 = motor_from_3_points_pairs({B, A, C}, {B1, A1, C1});
+
+    EXPECT_NEAR(M1[0], M4[0], 1E-7);
+    EXPECT_NEAR(M1[kE01], M4[kE01], 1E-7);
+    EXPECT_NEAR(M1[kE02], M4[kE02], 1E-7);
+    EXPECT_NEAR(M1[kE03], M4[kE03], 2E-7);
+    EXPECT_NEAR(M1[kE12], M4[kE12], 1E-7);
+    EXPECT_NEAR(M1[kE23], M4[kE23], 1E-7);
+    EXPECT_NEAR(M1[kE31], M4[kE31], 1E-7);
 }
