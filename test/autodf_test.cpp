@@ -55,10 +55,10 @@ TEST(BasicAutodiffTest, OneDependentVariableTest)
     ASSERT_EQ(ze.derivatives.size(), 1);
     ASSERT_EQ(we.derivatives.size(), 1);
 
-    EXPECT_EQ(xe.derivatives[x.ID], 1.F);
-    EXPECT_EQ(ye.derivatives[x.ID], 1.F);
-    EXPECT_EQ(ze.derivatives[x.ID], 66.F);
-    EXPECT_EQ(we.derivatives[x.ID], 256.F);
+    EXPECT_EQ(xe.derivatives[x.ID()], 1.F);
+    EXPECT_EQ(ye.derivatives[x.ID()], 1.F);
+    EXPECT_EQ(ze.derivatives[x.ID()], 66.F);
+    EXPECT_EQ(we.derivatives[x.ID()], 256.F);
 
     // nothing changed, except y
     EXPECT_EQ(x.value(), 15.f);
@@ -117,9 +117,9 @@ TEST(BasicAutodiffTest, SumTest)
     ASSERT_EQ(ze.derivatives.size(), 1);
 
     // all partial derivatives are 1, since only + was used
-    EXPECT_EQ(xe.derivatives[x.ID], 1.F);
-    EXPECT_EQ(ye.derivatives[x.ID], 1.F);
-    EXPECT_EQ(ze.derivatives[x.ID], 2.F);
+    EXPECT_EQ(xe.derivatives[x.ID()], 1.F);
+    EXPECT_EQ(ye.derivatives[x.ID()], 1.F);
+    EXPECT_EQ(ze.derivatives[x.ID()], 2.F);
 }
 
 TEST(BasicAutodiffTest, SubtractTest)
@@ -163,9 +163,9 @@ TEST(BasicAutodiffTest, SubtractTest)
     ASSERT_EQ(ze.derivatives.size(), 1);
 
     // all partial derivatives are 1, since only + was used
-    EXPECT_EQ(xe.derivatives[x.ID], 1.F);
-    EXPECT_EQ(ye.derivatives[x.ID], -1.F);
-    EXPECT_EQ(ze.derivatives[x.ID], -1.F);
+    EXPECT_EQ(xe.derivatives[x.ID()], 1.F);
+    EXPECT_EQ(ye.derivatives[x.ID()], -1.F);
+    EXPECT_EQ(ze.derivatives[x.ID()], -1.F);
 }
 
 TEST(BasicAutodiffTest, MultiplicationTest)
@@ -201,6 +201,6 @@ TEST(BasicAutodiffTest, MultiplicationTest)
     ASSERT_EQ(ye.derivatives.size(), 1);
 
     // all partial derivatives are 1, since only + was used
-    EXPECT_EQ(xe.derivatives[x.ID], 1.F);
-    EXPECT_EQ(ye.derivatives[x.ID], 4 * x.value());
+    EXPECT_EQ(xe.derivatives[x.ID()], 1.F);
+    EXPECT_EQ(ye.derivatives[x.ID()], 4 * x.value());
 }

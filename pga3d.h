@@ -12,22 +12,31 @@
 
 enum Basis : std::size_t
 {
-    kScalar,
-    kE0,
-    kE1,
-    kE2,
-    kE3,
-    kE01,
-    kE02,
-    kE03,
-    kE12,
-    kE31,
-    kE23,
-    kE021,
-    kE013,
-    kE032,
-    kE123,
-    kE0123
+    kScalar = 0U,
+    kE0 = 1U,
+    kE1  = 2U,
+    kNX = kE1, // alias for plane x-normal
+    kE2 = 3U,
+    kNY = kE2, // alias for plane y-normal
+    kE3 = 4U,
+    kNZ = kE3, // alias for plane z-normal
+    kE01 = 5U, // X offset for line
+    kE02 = 6U, // Y offset for line
+    kE03 = 7U, // Z offset for line
+    kE12 = 8U,
+    kAX = kE12, // bivector for X direction ?? WTF
+    kE31 = 9U,
+    kAY = kE12, // bivector for Y direction
+    kE23 = 10U,
+    kAZ = kE23, // bivector for Z direction ?? WTF
+    kE021 = 11U,
+    kX = kE23, // X coordinate for a point
+    kE013 = 12U,
+    kY = kE23, // Y coordinate for a point
+    kE032 = 13U,
+    kZ = kE23, // Z coordinate for a point
+    kE123 = 14U,
+    kE0123 = 15U
 };
 
 template <typename ScalarType = float>
@@ -45,25 +54,6 @@ class PGA3D
 
     ScalarType& operator[](size_t idx) { return mvec[idx]; }
     const ScalarType& operator[](size_t idx) const { return mvec[idx]; }
-
-    PGA3D log()
-    {
-        static const char* basis[] =
-            {"1", "e0", "e1", "e2", "e3", "e01", "e02", "e03", "e12", "e31", "e23", "e021", "e013", "e032", "e123", "e0123"};
-
-        int n = 0;
-        for (int i = 0, j = 0; i < 16; i++)
-            if (float(mvec[i]) != 0.0f)
-            {
-                n++;
-                printf("%s%0.7g%s", (j > 0) ? " + " : "", float(mvec[i]), (i == 0) ? "" : basis[i]);
-                j++;
-            };
-        if (n == 0)
-            printf("0");
-        printf("\n");
-        return *this;
-    }
 
     /// Clifford Conjugation  : res = a.Conjugate()
     PGA3D<ScalarType> Conjugate()
@@ -111,11 +101,11 @@ class PGA3D
         return res;
     };
 
-    float norm() { return sqrt(std::abs(((*this) * Conjugate()).mvec[0])); }
+    float norm() { return sqrt(std::abs(float(((*this) * Conjugate()).mvec[0]))); }
 
     float inorm() { return (!(*this)).norm(); }
 
-    PGA3D<ScalarType> normalized() { return (*this) * (1 / norm()); }
+    PGA3D<ScalarType> normalized() { return (*this) * ScalarType(1.F / norm()); }
 };
 
 /// Reverse the order of the basis blades. : res = ~a
@@ -562,4 +552,23 @@ static PGA3D<ScalarType> point_on_torus(ScalarType s, ScalarType t)
     const PGA3D<ScalarType> e123 = e1 ^ e2 ^ e3;
     PGA3D<ScalarType> to = torus(s, t, 0.25f, e1 * e2, 0.6f, e1 * e3);
     return to * e123 * ~to;
+}
+
+template <typename ScalarType = float>
+void log(const PGA3D<ScalarType>& a)
+{
+    static const char* basis[] =
+        {"1", "e0", "e1", "e2", "e3", "e01", "e02", "e03", "e12", "e31", "e23", "e021", "e013", "e032", "e123", "e0123"};
+
+    int n = 0;
+    for (int i = 0, j = 0; i < 16; i++)
+        if (float(a[i]) != 0.0f)
+        {
+            n++;
+            printf("%s%0.7g%s", (j > 0) ? " + " : "", float(a[i]), (i == 0) ? "" : basis[i]);
+            j++;
+        };
+    if (n == 0)
+        printf("0");
+    printf("\n");
 }

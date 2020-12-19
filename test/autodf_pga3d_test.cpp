@@ -107,14 +107,14 @@ TEST(AutoDfPGA3DTest, TryTranslatorOptimizationTest)
     {
         err_prev = std::abs(eval.value);
 
-        w.value() -= eval.derivatives[w.ID] * learning_rate;
-        a.value() -= eval.derivatives[a.ID] * learning_rate;
-        b.value() -= eval.derivatives[b.ID] * learning_rate;
-        c.value() -= eval.derivatives[c.ID] * learning_rate;
-        x.value() -= eval.derivatives[x.ID] * learning_rate;
-        y.value() -= eval.derivatives[y.ID] * learning_rate;
-        z.value() -= eval.derivatives[z.ID] * learning_rate;
-        i.value() -= eval.derivatives[i.ID] * learning_rate;
+        w.value() -= eval.derivatives[w.ID()] * learning_rate;
+        a.value() -= eval.derivatives[a.ID()] * learning_rate;
+        b.value() -= eval.derivatives[b.ID()] * learning_rate;
+        c.value() -= eval.derivatives[c.ID()] * learning_rate;
+        x.value() -= eval.derivatives[x.ID()] * learning_rate;
+        y.value() -= eval.derivatives[y.ID()] * learning_rate;
+        z.value() -= eval.derivatives[z.ID()] * learning_rate;
+        i.value() -= eval.derivatives[i.ID()] * learning_rate;
         j++;
 
         eval = err.eval();
