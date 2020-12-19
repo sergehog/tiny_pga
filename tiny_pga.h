@@ -345,7 +345,8 @@ constexpr Elems MotorElems = static_cast<Elems>(elems::BitValues::kScalar) |
 
 }  // namespace elems
 
-template <Elems elements, typename ScalarType = float> struct Multivector;
+template <Elems elements, typename ScalarType = float>
+struct Multivector;
 using PlaneF = Multivector<elems::PlaneElems, float>;
 using LineF = Multivector<elems::LineElems, float>;
 using PointF = Multivector<elems::PointElems, float>;
@@ -383,78 +384,25 @@ struct Multivector
     /// Exposing elements outside, as static const value
     static constexpr Elems Elements = elements;
 
-#ifdef HIDE_CODE
-    /// Templated (compile-time) getter/setter for obtaining individual elements
-    ///
-    //  template<elems::BitValues elem> ScalarType& value()
-    //  {
-    //    if(bool(elements & static_cast<Elems>(elem)))
-    //    {
-    //      switch(static_cast<Elems>(elem) / 4)
-    //      {
-    //        case 0U:
-    //          return Vector[static_cast<Elems>(elem) % 4];
-    //        case 1U:
-    //          return BivectorE[static_cast<Elems>(elem) % 4];
-    //        case 2U:
-    //          return Bivector0[static_cast<Elems>(elem) % 4];
-    //        default:
-    //          return Trivector[static_cast<Elems>(elem) % 4];
-    //      }
-    //    }
-    //    else
-    //    {
-    //      // This shall never happen
-    //      throw std::exception();
-    //      static ScalarType stub_element {};
-    //      return stub_element;
-    //    }
-    //  }
-    //
-    //  template<elems::BitValues elem> ScalarType value() const
-    //  {
-    //    if(bool(elements & static_cast<Elems>(elem)))
-    //    {
-    //      switch(static_cast<Elems>(elem) / 4)
-    //      {
-    //        case 0U:
-    //          return Vector[static_cast<Elems>(elem) % 4];
-    //        case 1U:
-    //          return BivectorE[static_cast<Elems>(elem) % 4];
-    //        case 2U:
-    //          return Bivector0[static_cast<Elems>(elem) % 4];
-    //        default:
-    //          return Trivector[static_cast<Elems>(elem) % 4];
-    //      }
-    //    }
-    //    else
-    //    {
-    //      // This shall never happen
-    //      throw std::exception();
-    //      static ScalarType stub_element {};
-    //      return stub_element;
-    //    }
-    //  }
-#endif
     // In this macro we define setter and read-only getter functions,
     // as well as define private stub function, in case if element does not exist
-#define ELEM_ACCESS_FUNCTION(element_name, array_position)                                             \
-    template <typename T = ScalarType>                                                            \
+#define ELEM_ACCESS_FUNCTION(element_name, array_position)                                      \
+    template <typename T = ScalarType>                                                          \
     typename std::enable_if<elems::has_##element_name(elements), T>::type& element_name()       \
     {                                                                                           \
         return array_position;                                                                  \
     };                                                                                          \
-    template <typename T = ScalarType>                                                            \
+    template <typename T = ScalarType>                                                          \
     typename std::enable_if<elems::has_##element_name(elements), T>::type element_name() const  \
     {                                                                                           \
         return array_position;                                                                  \
     }                                                                                           \
-    template <typename T = ScalarType>                                                            \
+    template <typename T = ScalarType>                                                          \
     typename std::enable_if<!elems::has_##element_name(elements), T>::type& element_name()      \
     {                                                                                           \
         return stub_element;                                                                    \
     }                                                                                           \
-    template <typename T = ScalarType>                                                            \
+    template <typename T = ScalarType>                                                          \
     typename std::enable_if<!elems::has_##element_name(elements), T>::type element_name() const \
     {                                                                                           \
         return 0.;                                                                              \
@@ -525,16 +473,6 @@ struct Multivector
     {                                                                       \
         out.elem_out() sign2 elem2() * other.elem1();                       \
     }
-
-#ifdef HIDE_CODE
-        //    if (elems::has_scalar(out_elems))
-        //    {
-        //      if(elems::has_scalar(elements) && elems::has_scalar(other_elements))
-        //      {
-        //        out.value<elems::BitValues::kScalar>() += 1.F;
-        //      }
-        //    }
-#endif
 
         if (elems::has_scalar(out_elems))
         {
@@ -783,7 +721,7 @@ struct Multivector
         return out;
     }
 
-    Multivector<elements, ScalarType> sandwich(const Translator & translator) const
+    Multivector<elements, ScalarType> sandwich(const Translator& translator) const
     {
         Multivector<elements, ScalarType> out;
         auto res = (translator * *this) * ~translator;

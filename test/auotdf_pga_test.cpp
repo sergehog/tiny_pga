@@ -27,15 +27,17 @@ using Float = AutoDf<float>;
 
 TEST(AutoDfPGATest, SimpleTest)
 {
+    Float::SetType(Float::AutoType::kVariableType);
     Float x = 2.F;
     Float y = 3.F;
     Float z = 4.F;
     Float w = Float(1.F, true);
+    Float::SetType(Float::AutoType::kConstType);
 
     Multivector<elems::PointElems, Float> X;
     X.e021() = x;
     X.e013() = y;
-    X.e013() = z;
+    X.e032() = z;
     X.e123() = w;
 
     EXPECT_EQ(X.e021().value(), 2.F);
@@ -47,13 +49,15 @@ TEST(AutoDfPGATest, SimpleTest)
 
     EXPECT_EQ(Xn.scalar().value(), -1.F);
     auto variables = Xn.scalar().variables();
-    EXPECT_EQ(variables.size(), 3);
-    auto xv = variables[x.ID()];
-    std::cout << *xv << std::endl;
+    ASSERT_EQ(variables.size(), 0);
 
-    EXPECT_EQ(*variables[x.ID()], x.value());
-    EXPECT_EQ(*variables[y.ID()], y.value());
-    EXPECT_EQ(*variables[z.ID()], z.value());
+    Float formula = (x * y * z + w) / (y - z * x);
+    EXPECT_NO_THROW(formula.eval());
+    variables = formula.variables();
 
+    ASSERT_EQ(variables.size(), 3);
+    EXPECT_EQ(*variables[x.ID()], 2.F);
+    EXPECT_EQ(*variables[y.ID()], 3.F);
+    EXPECT_EQ(*variables[z.ID()], 4.F);
 
 }

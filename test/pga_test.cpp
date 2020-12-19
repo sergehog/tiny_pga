@@ -84,7 +84,7 @@ TEST(BasicTest, SquaringTest)
 //    EXPECT_EQ(p2.e01(), 11.F);
 //}
 
-
+/*
 template <Elems elems>
 struct AllPgaTest
 {
@@ -187,3 +187,4 @@ TEST(BasicTest, MultivectorSquaringTest)
 {
     AllPgaTest<0>::RunTest();
 }
+*/
