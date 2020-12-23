@@ -27,12 +27,12 @@ using Float = AutoDf<float>;
 
 TEST(AutoDfPGATest, SimpleTest)
 {
-    Float::SetType(Float::AutoType::kVariableType);
+    Float::StartConstants(false);
     Float x = 2.F;
     Float y = 3.F;
     Float z = 4.F;
     Float w = Float(1.F, true);
-    Float::SetType(Float::AutoType::kConstType);
+    Float::StartConstants();
 
     Multivector<elems::PointElems, Float> X;
     X.e021() = x;

@@ -66,11 +66,15 @@ class PGA3D
 
     PGA3D(Basis idx) : mvec{} { mvec[idx] = 1.F; }
 
+    // PGA3D(const PGA3D& other) : mvec{other.mvec} {}
+
+    PGA3D(const std::array<ScalarType, 16>& mvec) : mvec{mvec} {}
+
     ScalarType& operator[](size_t idx) { return mvec[idx]; }
     const ScalarType& operator[](size_t idx) const { return mvec[idx]; }
 
     /// Clifford Conjugation  : res = a.Conjugate()
-    PGA3D<ScalarType> Conjugate()
+    PGA3D<ScalarType> Conjugate() const
     {
         PGA3D<ScalarType> res;
         res[0] = mvec[0];
@@ -93,7 +97,7 @@ class PGA3D
     };
 
     /// Main involution : res = a.Involute()
-    PGA3D<ScalarType> Involute()
+    PGA3D<ScalarType> Involute() const
     {
         PGA3D<ScalarType> res;
         res[0] = mvec[0];
@@ -117,11 +121,15 @@ class PGA3D
 
     PGA3D<ScalarType> sqrt() { return (1.F + *this).normalized(); }
 
-    float norm() { return std::sqrt(std::abs(float(((*this) * Conjugate()).mvec[0]))); }
+    float norm() const { return std::sqrt(std::abs(float(((*this) * Conjugate()).mvec[0]))); }
 
     float inorm() { return (!(*this)).norm(); }
 
-    PGA3D<ScalarType> normalized() { return (*this) * ScalarType(1.F / norm()); }
+    PGA3D<ScalarType> normalized() const
+    {
+        PGA3D<ScalarType> out(mvec);
+        return out * ScalarType(1.F / norm());
+    }
 };
 
 /// Reverse the order of the basis blades. : res = ~a
@@ -594,8 +602,8 @@ void log(const PGA3D<ScalarType>& a, std::string name = "")
 }
 
 template <typename ScalarType = float>
-PGA3D<ScalarType> motor_from_3_points_pairs(const std::array<PGA3D<ScalarType>, 3>& reference_points,
-                                            const std::array<PGA3D<ScalarType>, 3>& target_points)
+PGA3D<ScalarType> motor_from_point_pairs(const std::array<PGA3D<ScalarType>, 3>& reference_points,
+                                         const std::array<PGA3D<ScalarType>, 3>& target_points)
 {
     const PGA3D<>& A = reference_points[0];
     const PGA3D<>& B = reference_points[1];

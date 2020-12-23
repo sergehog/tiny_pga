@@ -129,8 +129,8 @@ TEST(PGA3DTest, MotorEstimatorStabilityTest)
     PGA3D<> B1 = point(-1.F, -2.F, -1.F);
     PGA3D<> C1 = point(-1.F, -1.F, -2.F);
 
-    const auto M1 = motor_from_3_points_pairs({A, B, C}, {A1, B1, C1});
-    const auto M2 = motor_from_3_points_pairs({A, C, B}, {A1, C1, B1});
+    const auto M1 = motor_from_point_pairs({A, B, C}, {A1, B1, C1});
+    const auto M2 = motor_from_point_pairs({A, C, B}, {A1, C1, B1});
 
     EXPECT_NEAR(M1[0], M2[0], 1E-7);
     EXPECT_NEAR(M1[kE01], M2[kE01], 1E-7);
@@ -140,7 +140,7 @@ TEST(PGA3DTest, MotorEstimatorStabilityTest)
     EXPECT_NEAR(M1[kE23], M2[kE23], 1E-7);
     EXPECT_NEAR(M1[kE31], M2[kE31], 1E-7);
 
-    const auto M3 = motor_from_3_points_pairs({C, A, B}, {C1, A1, B1});
+    const auto M3 = motor_from_point_pairs({C, A, B}, {C1, A1, B1});
 
     EXPECT_NEAR(M1[0], M3[0], 1E-7);
     EXPECT_NEAR(M1[kE01], M3[kE01], 1E-7);
@@ -150,7 +150,7 @@ TEST(PGA3DTest, MotorEstimatorStabilityTest)
     EXPECT_NEAR(M1[kE23], M3[kE23], 1E-7);
     EXPECT_NEAR(M1[kE31], M3[kE31], 1E-7);
 
-    const auto M4 = motor_from_3_points_pairs({B, A, C}, {B1, A1, C1});
+    const auto M4 = motor_from_point_pairs({B, A, C}, {B1, A1, C1});
 
     EXPECT_NEAR(M1[0], M4[0], 1E-7);
     EXPECT_NEAR(M1[kE01], M4[kE01], 1E-7);
@@ -160,3 +160,273 @@ TEST(PGA3DTest, MotorEstimatorStabilityTest)
     EXPECT_NEAR(M1[kE23], M4[kE23], 1E-7);
     EXPECT_NEAR(M1[kE31], M4[kE31], 1E-7);
 }
+
+TEST(PGA3DTest, How_AverageMotor_ComparesTo_MotorOfAverage_Test)
+{
+    const PGA3D<> A1 = point(1.F, 1.F, 1.F);
+    const PGA3D<> A2 = point(2.F, 1.F, 1.F);
+    const PGA3D<> A3 = point(2.F, 2.F, 1.F);
+
+    const PGA3D<> B1 = point(-1.F, -1.F, -1.F);
+    const PGA3D<> B2 = point(-1.F, -2.F, -1.F);
+    const PGA3D<> B3 = point(-1.F, -2.F, -2.F);
+
+    const PGA3D<> Aavg = (A1 + A2 + A3) * (1.F / 3.F);
+    const PGA3D<> Bavg = (B1 + B2 + B3) * (1.f / 3.F);
+
+    const PGA3D<> M1 = (B1 * ~A1).sqrt();
+    const PGA3D<> M2 = (B2 * ~A2).sqrt();
+    const PGA3D<> M3 = (B3 * ~A3).sqrt();
+
+    // average motor
+    const PGA3D<> M123avg = (M1 + M2 + M3) * (1.f / 3.F);
+
+    // motor of average
+    const PGA3D<> Mavg = (Bavg * ~Aavg).sqrt();
+
+    log(M123avg, "M123avg");
+    log(Mavg, "Mavg");
+    EXPECT_NEAR(M123avg[0], Mavg[0], 1E-7);
+    EXPECT_NEAR(M123avg[kE01], Mavg[kE01], 1E-7);
+    EXPECT_NEAR(M123avg[kE02], Mavg[kE02], 1E-7);
+    EXPECT_NEAR(M123avg[kE03], Mavg[kE03], 2E-7);
+    EXPECT_NEAR(M123avg[kE12], Mavg[kE12], 1E-7);
+    EXPECT_NEAR(M123avg[kE23], Mavg[kE23], 1E-7);
+    EXPECT_NEAR(M123avg[kE31], Mavg[kE31], 1E-7);
+}
+
+
+
+
+template <typename ScalarType = float>
+PGA3D<ScalarType> motor_from_3point_pairs(const std::array<PGA3D<ScalarType>, 3>& reference_points,
+                                          const std::array<PGA3D<ScalarType>, 3>& target_points)
+{
+    const PGA3D<>& A1 = reference_points[0];
+    const PGA3D<>& A2 = reference_points[1];
+    const PGA3D<>& A3 = reference_points[2];
+    const PGA3D<> B1 = target_points[0];
+    const PGA3D<> B2 = target_points[1];
+    const PGA3D<> B3 = target_points[2];
+
+    const PGA3D<> Aavg = (A1 + A2 + A3) * (1.F / 3.F);
+    const PGA3D<> Bavg = (B1 + B2 + B3) * (1.f / 3.F);
+
+    // motor of average for points
+    const PGA3D<> Mavg = (Bavg * ~Aavg).sqrt();
+
+    // "translated" points
+    const PGA3D<> A1a = Mavg * A1 * ~Mavg;
+    const PGA3D<> A2a = Mavg * A2 * ~Mavg;
+    const PGA3D<> A3a = Mavg * A3 * ~Mavg;
+
+    // motors of lines
+    const PGA3D<> M1a = ((Bavg & B1) * ~(Bavg & A1a)).sqrt();
+    const PGA3D<> M2a = ((Bavg & B2) * ~(Bavg & A2a)).sqrt();
+    const PGA3D<> M3a = ((Bavg & B3) * ~(Bavg & A3a)).sqrt();
+    // average motor of lines
+    const PGA3D<> M123a = (M1a + M2a + M3a) * (1.f / 3.F);
+
+    // average line
+    const auto Bline = ((Bavg & B1) + (Bavg & B2) + (Bavg & B3)) * (1.F / 3.F);
+
+    // "translated" points again
+    const PGA3D<> A1b = M123a * A1a * ~M123a;
+    const PGA3D<> A2b = M123a * A2a * ~M123a;
+    const PGA3D<> A3b = M123a * A3a * ~M123a;
+
+    const PGA3D<> M1b = ((Bline & Bavg & B1) * ~(Bline & Bavg & A1b)).sqrt();
+    const PGA3D<> M2b = ((Bline & Bavg & B2) * ~(Bline & Bavg & A2b)).sqrt();
+    const PGA3D<> M3b = ((Bline & Bavg & B3) * ~(Bline & Bavg & A3b)).sqrt();
+    // average motor of planes
+    const PGA3D<> M123ab = (M1a + M2a + M3a) * (1.f / 3.F);
+
+    return M123ab * M123a * Mavg;
+}
+
+template <typename ScalarType = float>
+PGA3D<ScalarType> motor_from_many_point_pairs(const std::vector<PGA3D<ScalarType>>& reference_points,
+                                              const std::vector<PGA3D<ScalarType>>& target_points)
+{
+    PGA3D<ScalarType> M1;
+    std::size_t size = std::min(reference_points.size(), target_points.size());
+
+    if (size == 0U)
+    {
+        return M1;
+    }
+
+    // Find centroids for reference and for target sets
+    for (std::size_t i = 0U; i < size; i++)
+    {
+        M1 = M1 + target_points[i] * ~reference_points[i];
+    }
+
+    return M1.sqrt();
+}
+
+// template <typename ScalarType = float>
+// PGA3D<ScalarType> motor_from_element_pairs(const std::vector<PGA3D<ScalarType>>& reference_elems,
+//                                           const std::vector<PGA3D<ScalarType>>& target_elems)
+//{
+//    PGA3D<ScalarType> M1;
+//    std::size_t size = std::min(reference_elems.size(), target_elems.size());
+//
+//    if (size == 0U)
+//    {
+//        return M1;
+//    }
+//
+//    // Find first "average" transform (it behaves almost like finding centroid/average translation)
+//    for (std::size_t i = 0U; i < size; i++)
+//    {
+//        // (A1 * ~A).sqrt();
+//        auto Mi = (target_elems[i] * ~reference_elems[i]).sqrt();
+//        M1 = M1 + Mi;
+//    }
+//    M1 = M1 * float(1.F / float(size));
+//
+//    // transfrom all reference elements to a new transform
+//    std::vector<PGA3D<ScalarType>> reference_shifted;
+//    for (std::size_t i = 0U; i < size; i++)
+//    {
+//
+//        reference_shifted.push_back(M1 * reference_elems[i] * ~M1);
+//    }
+//
+//    PGA3D<ScalarType> M2;
+//    for (std::size_t i = 0U; i < size; i++)
+//    {
+//        //const auto Vb = ((A1 & B1) * ~(A1 & Ba)).sqrt();
+//        auto Mi = ((M1 & target_elems[i]) * ~(M1 & reference_shifted[i])).sqrt();
+//        M2 = M2 + Mi;
+//    }
+//    M2 = M2 * float(1.F / float(size));
+//
+////    // transfrom all reference elements to a new transform
+////    for (std::size_t i = 0U; i < size; i++)
+////    {
+////        reference_shifted[i] = (M2 * reference_shifted[i] * ~M2);
+////    }
+////
+////    PGA3D<ScalarType> M3;
+////    for (std::size_t i = 0U; i < size; i++)
+////    {
+////        auto Mi = (target_elems[i] * ~reference_shifted[i]).sqrt();
+////        M3 = M3 + Mi;
+////    }
+////    M3 = M3 * float(1.F / float(size));
+//
+//
+//    return /*M3 **/ M2 * M1;
+//}
+
+
+// TEST(PGA3DTest, MotorEstimator3StabilityTest)
+//{
+//    PGA3D<> A = point(1.F, 1.F, 1.F);
+//    PGA3D<> B = point(2.F, 1.F, 1.F);
+//    PGA3D<> C = point(1.F, 2.F, 1.F);
+//
+//    PGA3D<> A1 = point(-1.F, -1.F, -1.F);
+//    PGA3D<> B1 = point(-1.F, -2.F, -1.F);
+//    PGA3D<> C1 = point(-1.F, -1.F, -2.F);
+//
+//    const auto M1 = motor_from_point_pairs({A, B, C}, {A1, B1, C1});
+//    const auto M2 = motor_from_3point_pairs({A, C, B}, {A1, C1, B1});
+//    log(M1, "M1");
+//    log(M2, "M2");
+//
+//    EXPECT_NEAR(M1[0], M2[0], 1E-7);
+//    EXPECT_NEAR(M1[kE01], M2[kE01], 1E-7);
+//    EXPECT_NEAR(M1[kE02], M2[kE02], 1E-7);
+//    EXPECT_NEAR(M1[kE03], M2[kE03], 1E-7);
+//    EXPECT_NEAR(M1[kE12], M2[kE12], 1E-7);
+//    EXPECT_NEAR(M1[kE23], M2[kE23], 1E-7);
+//    EXPECT_NEAR(M1[kE31], M2[kE31], 1E-7);
+//}
+//
+//
+//
+//
+///// Estimated Motor shall be the same, despite order of given points
+// TEST(PGA3DTest, MultipointMotorEstimatorTest)
+//{
+//    PGA3D<> A = point(1.F, 1.F, 1.F);
+//    PGA3D<> B = point(2.F, 1.F, 1.F);
+//    PGA3D<> C = point(2.F, 2.F, 1.F);
+//    PGA3D<> D = point(1.F, 2.F, 1.F);
+//
+//
+//    PGA3D<> A1 = point(-1.F, -1.F, -1.F);
+//    PGA3D<> B1 = point(-1.F, -2.F, -1.F);
+//    PGA3D<> C1 = point(-1.F, -2.F, -2.F);
+//    PGA3D<> D1 = point(-1.F, -1.F, -2.F);
+//
+//    const auto M1 = motor_from_point_pairs({A, B, C}, {A1, B1, C1});
+//    const auto M2 = motor_from_many_point_pairs({A, C, B}, {A1, C1, B1});
+//
+//    log(M1, "M1");
+//    log(M2, "M2");
+//
+//    EXPECT_NEAR(M1[0], M2[0], 1E-7);
+////    EXPECT_NEAR(M1[kE01], M2[kE01], 1E-7);
+////    EXPECT_NEAR(M1[kE02], M2[kE02], 1E-7);
+////    EXPECT_NEAR(M1[kE03], M2[kE03], 2E-7);
+////    EXPECT_NEAR(M1[kE12], M2[kE12], 1E-7);
+////    EXPECT_NEAR(M1[kE23], M2[kE23], 1E-7);
+////    EXPECT_NEAR(M1[kE31], M2[kE31], 1E-7);
+//
+//}
+
+// TEST(PGA3DTest, How_AverageMotor_ComparesTo_MotorOfAverage_ForLines_Test)
+//{
+//    const PGA3D<> A1 = point(1.F, 1.F, 1.F);
+//    const PGA3D<> A2 = point(2.F, 1.F, 1.F);
+//    const PGA3D<> A3 = point(2.F, 2.F, 1.F);
+//
+//    const PGA3D<> B1 = point(-1.F, -1.F, -1.F);
+//    const PGA3D<> B2 = point(-1.F, -2.F, -1.F);
+//    const PGA3D<> B3 = point(-1.F, -2.F, -2.F);
+//
+//    const PGA3D<> Aavg = (A1 + A2 + A3) * (1.F/3.F);
+//    const PGA3D<> Bavg = (B1 + B2 + B3) * (1.f/3.F);
+//
+//    // motor of average for points
+//    const PGA3D<> Mavg = (Bavg * ~Aavg).sqrt();
+//
+//    // "translated" points
+//    const PGA3D<> A1a = Mavg * A1 * ~Mavg;
+//    const PGA3D<> A2a = Mavg * A2 * ~Mavg;
+//    const PGA3D<> A3a = Mavg * A3 * ~Mavg;
+//
+//    // motors of lines
+//    const PGA3D<> M1a = ((Bavg & B1) * ~(Bavg & A1a)).sqrt();
+//    const PGA3D<> M2a = ((Bavg & B2) * ~(Bavg & A2a)).sqrt();
+//    const PGA3D<> M3a = ((Bavg & B3) * ~(Bavg & A3a)).sqrt();
+//    // average motor of lines
+//    const PGA3D<> M123a = (M1a + M2a + M3a)* (1.f/3.F);
+//
+//    // average lines
+//    //const auto Aline = ((Bavg & A1a) + (Bavg & A2a) + (Bavg & A3a)) * (1.F/3.F);
+//    const auto Bline = ((Bavg & B1) + (Bavg & B2) + (Bavg & B3)) * (1.F/3.F);
+//
+////    // motor of average lines
+////    const PGA3D<> M_ABline = (Bline * ~Aline).sqrt();
+////    log(M123a, "M123a");
+////    log(M_ABline, "M_ABline");
+////    EXPECT_NEAR(M123a[0], M_ABline[0], 1E-7);
+//
+//    // "translated" points again
+//    const PGA3D<> A1b = M123a * A1a * ~M123a;
+//    const PGA3D<> A2b = M123a * A2a * ~M123a;
+//    const PGA3D<> A3b = M123a * A3a * ~M123a;
+//
+//    const PGA3D<> M1b = ((Bline & Bavg & B1) * ~(Bline & Bavg & A1b)).sqrt();
+//    const PGA3D<> M2b = ((Bline & Bavg & B2) * ~(Bline & Bavg & A2b)).sqrt();
+//    const PGA3D<> M3b = ((Bline & Bavg & B3) * ~(Bline & Bavg & A3b)).sqrt();
+//    // average motor of planes
+//    const PGA3D<> M123ab = (M1a + M2a + M3a)* (1.f/3.F);
+//
+//
+//}
