@@ -37,12 +37,13 @@ TEST(AutoDfPGA3DTest, SimpleTest)
     APGA aa = e0 * x;
 
     APGA p = point(x, y, z);
-    auto p_sq = p * p;
-    auto vars1 = p_sq[0].variables();
-    EXPECT_EQ(vars1.size(), 3);
-    EXPECT_EQ(p_sq[0].value(), -1);
 
-    auto p_sq_dx = p_sq[0].eval();
+    auto p_sq = p[kE013] * p[kE013] + p[kE021] * p[kE021] + p[kE032] * p[kE032];
+    auto vars1 = p_sq.variables();
+    EXPECT_EQ(vars1.size(), 3);
+    EXPECT_EQ(p_sq.value(), 2*2 + 3*3 + 4*4);
+
+    auto p_sq_dx = p_sq.eval();
     EXPECT_EQ(p_sq_dx.derivatives.size(), 3);
 }
 
