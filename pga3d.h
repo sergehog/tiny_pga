@@ -1,22 +1,32 @@
+// MIT License
+//
+// Copyright (c) 2017 Steven De Keninck
+// Copyright (c) 2020 Sergey Smirnov
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 // 3D Projective Geometric Algebra
 // Written by a generator written by enki.
+// https://github.com/enkimute/ganja.js
 
-/*
- * This file is part of the Tiny-PGA distribution (https://github.com/sergehog/tiny_pga)
- * Copyright (c) 2020 Sergey Smirnov / Seregium Oy.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, version 3.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
+#ifndef TINY_PGA_PGA3D_H_
+#define TINY_PGA_PGA3D_H_
 
 #include <stdio.h>
 #include <array>
@@ -24,6 +34,8 @@
 
 #define PI 3.14159265358979323846
 
+namespace tiny_pga
+{
 enum Basis : std::size_t
 {
     kScalar = 0U,
@@ -628,4 +640,7 @@ const static PGA3D<float> e01(kE01), e02(kE02), e03(kE03);
 const static PGA3D<float> e12(kE12), e23(kE23), e31(kE31);
 const static PGA3D<float> e021(kE021), e023(kE032), e013(kE013), e123(kE123);
 const static PGA3D<float> e0123(kE0123);
-};
+};  // namespace float_basis
+}  // namespace tiny_pga
+
+#endif  // TINY_PGA_PGA3D_H_

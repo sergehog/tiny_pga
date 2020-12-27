@@ -20,7 +20,7 @@
 #include <gtest/gtest.h>
 
 using namespace tiny_autodf;
-
+using namespace tiny_pga;
 using Float = AutoDf<float>;
 using APGA = PGA3D<Float>;
 using PGA = PGA3D<float>;

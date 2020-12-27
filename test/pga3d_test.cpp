@@ -18,6 +18,7 @@
 #include "../pga3d.h"
 #include <gtest/gtest.h>
 
+using namespace tiny_pga;
 using namespace float_basis;
 
 TEST(PGA3DTest, BasicTest)
