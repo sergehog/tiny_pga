@@ -4,8 +4,6 @@ set(CMAKE_CXX_STANDARD 14)
 
 find_package(GTest CONFIG REQUIRED)
 
-enable_testing()
-
 add_executable(elements_test elements_test.cpp )
 add_executable(pga_test pga_test.cpp)
 add_executable(autodf_test autodf_test.cpp)
