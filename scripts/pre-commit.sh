@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
+set -e
+
 echo "RUN CLANG-FORMAT"
-./scripts/run-format.sh
+./scripts/pre-commit-format.sh
 
 echo "CHECK UNIT-TESTS"
 ./scripts/run-tests.sh

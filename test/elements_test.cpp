@@ -67,8 +67,8 @@ class PgaElementsTest
 /// datatype is sufficient
 TEST_P(PgaElementsTest, BasicElementsTest)
 {
-    bool test_scalar, test_e0, test_e1, test_e2, test_e3, test_e01, test_e02, test_e03, test_e12, test_e31, test_e23,
-        test_e021, test_e013, test_e032, test_e123, test_e0123;
+    bool test_scalar{}, test_e0{}, test_e1{}, test_e2{}, test_e3{}, test_e01{}, test_e02{}, test_e03{}, test_e12{},
+        test_e31{}, test_e23{}, test_e021{}, test_e013{}, test_e032{}, test_e123{}, test_e0123{};
     std::tie(test_scalar,
              test_e0,
              test_e1,
@@ -124,8 +124,8 @@ TEST_P(PgaElementsTest, BasicElementsTest)
 /// Certain combinations has to square to other certain elements
 TEST_P(PgaElementsTest, ElementsSquaringTest)
 {
-    bool test_scalar, test_e0, test_e1, test_e2, test_e3, test_e01, test_e02, test_e03, test_e12, test_e31, test_e23,
-        test_e021, test_e013, test_e032, test_e123, test_e0123;
+    bool test_scalar{}, test_e0{}, test_e1{}, test_e2{}, test_e3{}, test_e01{}, test_e02{}, test_e03{}, test_e12{},
+        test_e31{}, test_e23{}, test_e021{}, test_e013{}, test_e032{}, test_e123{}, test_e0123{};
     std::tie(test_scalar,
              test_e0,
              test_e1,
