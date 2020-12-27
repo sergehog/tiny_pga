@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-echo "Running pre-commit hook"
+echo "RUN CLANG-FORMAT"
+./scripts/run-format.sh
+
+echo "CHECK UNIT-TESTS"
 ./scripts/run-tests.sh
 
 # $? stores exit value of the last command

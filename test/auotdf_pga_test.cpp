@@ -15,7 +15,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include "../tiny_autodf.h"
 #include "../tiny_pga.h"
 #include <gtest/gtest.h>
@@ -59,5 +58,4 @@ TEST(AutoDfPGATest, SimpleTest)
     EXPECT_EQ(*variables[x.ID()], 2.F);
     EXPECT_EQ(*variables[y.ID()], 3.F);
     EXPECT_EQ(*variables[z.ID()], 4.F);
-
 }

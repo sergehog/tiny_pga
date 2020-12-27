@@ -196,9 +196,6 @@ TEST(PGA3DTest, How_AverageMotor_ComparesTo_MotorOfAverage_Test)
     EXPECT_NEAR(M123avg[kE31], Mavg[kE31], 1E-7);
 }
 
-
-
-
 template <typename ScalarType = float>
 PGA3D<ScalarType> motor_from_3point_pairs(const std::array<PGA3D<ScalarType>, 3>& reference_points,
                                           const std::array<PGA3D<ScalarType>, 3>& target_points)
@@ -321,7 +318,6 @@ PGA3D<ScalarType> motor_from_many_point_pairs(const std::vector<PGA3D<ScalarType
 //
 //    return /*M3 **/ M2 * M1;
 //}
-
 
 // TEST(PGA3DTest, MotorEstimator3StabilityTest)
 //{

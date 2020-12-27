@@ -41,7 +41,7 @@ TEST(AutoDfPGA3DTest, SimpleTest)
     auto p_sq = p[kE013] * p[kE013] + p[kE021] * p[kE021] + p[kE032] * p[kE032];
     auto vars1 = p_sq.variables();
     EXPECT_EQ(vars1.size(), 3);
-    EXPECT_EQ(p_sq.value(), 2*2 + 3*3 + 4*4);
+    EXPECT_EQ(p_sq.value(), 2 * 2 + 3 * 3 + 4 * 4);
 
     auto p_sq_dx = p_sq.eval();
     EXPECT_EQ(p_sq_dx.derivatives.size(), 3);

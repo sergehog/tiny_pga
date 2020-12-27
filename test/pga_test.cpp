@@ -15,7 +15,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include "../tiny_pga.h"
 #include <gtest/gtest.h>
 
@@ -60,7 +59,6 @@ TEST_F(PgaTest, BasicElemTest)
     Multivector<elem_1> out = Multivector<elem_e1>{} * Multivector<elem_e1>{};
 }
 
-
 TEST(BasicTest, SquaringTest)
 {
     tiny_pga::PointF point{{}, {}, {}, {1.f, 2.f, 3.f, 1.F}};
@@ -70,11 +68,10 @@ TEST(BasicTest, SquaringTest)
 
     tiny_pga::PlaneF plane{{1.f, 2.f, 3.f, 4.f}};
     const auto b = plane * plane;
-    EXPECT_EQ(b.scalar(), 2*2 + 3*3 + 4*4);
-
+    EXPECT_EQ(b.scalar(), 2 * 2 + 3 * 3 + 4 * 4);
 }
 
-//TEST(BasicTest, SandwichAutoTest)
+// TEST(BasicTest, SandwichAutoTest)
 //{
 //    tiny_pga::PointF point{{}, {}, {}, {1.f, 2.f, 3.f, 0.F}};
 //

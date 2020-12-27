@@ -15,7 +15,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include "../tiny_autodf.h"
 #include <gtest/gtest.h>
 
@@ -73,7 +72,6 @@ TEST(BasicAutodiffTest, OneDependentVariableTest)
     EXPECT_EQ(y.value(), 25.f);
     EXPECT_EQ(z.value(), 612.f);
     EXPECT_EQ(w.value(), 18.f);
-
 }
 
 TEST(BasicAutodiffTest, SumTest)
