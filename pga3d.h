@@ -52,15 +52,12 @@ enum Basis : std::size_t
     kE12 = 8U,
     kAX = kE12,  // bivector for X direction ?? WTF
     kE31 = 9U,
-    kAY = kE12,  // bivector for Y direction
+    kAY = kE31,  // bivector for Y direction
     kE23 = 10U,
     kAZ = kE23,  // bivector for Z direction ?? WTF
     kE021 = 11U,
-    kX = kE23,  // X coordinate for a point
     kE013 = 12U,
-    kY = kE23,  // Y coordinate for a point
     kE032 = 13U,
-    kZ = kE23,  // Z coordinate for a point
     kE123 = 14U,
     kE0123 = 15U
 };
@@ -527,36 +524,45 @@ inline PGA3D<ScalarType> operator-(const PGA3D<ScalarType>& a, const float& b)
 
 /// A rotor (Euclidean line) and translator (Ideal line)
 template <typename ScalarType = float>
-static PGA3D<ScalarType> rotor(float angle, PGA3D<ScalarType> line)
+static PGA3D<ScalarType> rotor(const ScalarType angle, const PGA3D<ScalarType> line)
 {
-    return std::cos(angle / 2.0f) + std::sin(angle / 2.0f) * line.normalized();
+    return std::cos(angle / ScalarType(2.0)) + std::sin(angle / ScalarType(2.0)) * line.normalized();
 }
 
 /// Translator over directed line
 template <typename ScalarType = float>
-static PGA3D<ScalarType> translator(ScalarType dist, PGA3D<ScalarType> line)
+static PGA3D<ScalarType> translator(const ScalarType dist, const PGA3D<ScalarType> line)
 {
-    return 1.0f + dist / 2.0f * line;
+    using APGA = PGA3D<ScalarType>;
+    return APGA(kScalar) + (dist / ScalarType(2.0)) * line;
 }
 
 /// A plane is defined using its homogenous equation ax + by + cz + d = 0
 template <typename ScalarType = float>
 static PGA3D<ScalarType> plane(ScalarType a, ScalarType b, ScalarType c, ScalarType d)
 {
+    using APGA = PGA3D<ScalarType>;
     /// PGA is plane based. Vectors are planes
-    const PGA3D<ScalarType> e0(kE0), e1(kE1), e2(kE2), e3(kE3);
-    return a * e1 + b * e2 + c * e3 + d * e0;
+    return APGA(a, kE1) + APGA(b, kE2) + APGA(c, kE3) + APGA(d, kE0);
 }
 
 /// A point is just a homogeneous point, euclidean coordinates plus the origin
 template <typename ScalarType = float>
 static PGA3D<ScalarType> point(const ScalarType& x, const ScalarType& y, const ScalarType& z)
 {
-    const PGA3D<ScalarType> e0(kE0), e1(kE1), e2(kE2), e3(kE3);
-    /// PGA points are trivectors.
-    const PGA3D<ScalarType> e123 = e1 ^ e2 ^ e3, e032 = e0 ^ e3 ^ e2, e013 = e0 ^ e1 ^ e3, e021 = e0 ^ e2 ^ e1;
-    return e123 + x * e032 + y * e013 + z * e021;
+    using APGA = PGA3D<ScalarType>;
+    return APGA(kE123) + APGA(x, kE032) + APGA(y, kE013) + APGA(z, kE021);
 }
+
+///// Translator
+// template <typename ScalarType = float>
+// static PGA3D<ScalarType> translator(const ScalarType dx, const ScalarType dy, const ScalarType dz)
+//{
+//    using APGA = PGA3D<ScalarType>;
+//    const PGA3D<ScalarType> line = (APGA(kE123) & point(dx, dy, dz)).normalized();
+//    ScalarType dist = std::sqrt(dx*dx + dy*dy + dz*dz);
+//    return translator(dist, line);
+//}
 
 // for our toy problem (generate points on the surface of a torus)
 // we start with a function that generates motors.
@@ -564,8 +570,8 @@ static PGA3D<ScalarType> point(const ScalarType& x, const ScalarType& y, const S
 template <typename ScalarType = float>
 static PGA3D<ScalarType> circle(ScalarType t, ScalarType radius, PGA3D<ScalarType> line)
 {
-    const PGA3D<ScalarType> e0(kE0), e1(kE1), e2(kE2), e3(kE3);
-    return rotor(t * 2.0f * PI, line) * translator(radius, e1 * e0);
+    using APGA = PGA3D<ScalarType>;
+    return rotor(ScalarType(t * 2.0 * PI), line) * translator(radius, APGA(kE01));
 }
 
 // a torus is now the product of two circles.
@@ -631,6 +637,33 @@ PGA3D<ScalarType> motor_from_point_pairs(const std::array<PGA3D<ScalarType>, 3>&
     const auto Vc = ((A1 & B1 & C1) * ~(A1 & B1 & Cba)).sqrt();
 
     return Vc * Vb * Va;
+}
+
+template <typename ScalarType = float>
+PGA3D<ScalarType> Euler2Rotor(const ScalarType yaw, const ScalarType pitch, const ScalarType roll)
+{
+    using APGA = PGA3D<ScalarType>;
+    APGA out = APGA(std::cos(ScalarType(yaw / 2.))) + APGA(std::sin(ScalarType(yaw / 2.)), tiny_pga::kE23);
+    out = out * (APGA(std::cos(ScalarType(pitch / 2.))) + APGA(std::sin(ScalarType(pitch / 2.)), tiny_pga::kE31));
+    out = out * (APGA(std::cos(ScalarType(roll / 2.))) + APGA(std::sin(ScalarType(roll / 2.)), tiny_pga::kE12));
+    return out.normalized();
+}
+
+template <typename ScalarType = float>
+PGA3D<ScalarType> Euler2RotorReference(const ScalarType yaw, const ScalarType pitch, const ScalarType roll)
+{
+    using APGA = PGA3D<ScalarType>;
+    const ScalarType cy = std::cos(yaw * 0.5);
+    const ScalarType sy = std::sin(yaw * 0.5);
+    const ScalarType cp = std::cos(pitch * 0.5);
+    const ScalarType sp = std::sin(pitch * 0.5);
+    const ScalarType cr = std::cos(roll * 0.5);
+    const ScalarType sr = std::sin(roll * 0.5);
+    const ScalarType qw = cr * cp * cy + sr * sp * sy;
+    const ScalarType qx = sr * cp * cy - cr * sp * sy;
+    const ScalarType qy = cr * sp * cy + sr * cp * sy;
+    const ScalarType qz = cr * cp * sy - sr * sp * cy;
+    return APGA(qw, tiny_pga::kScalar) + APGA(qx, tiny_pga::kE12) + APGA(qy, tiny_pga::kE31) + APGA(qz, tiny_pga::kE23);
 }
 
 namespace float_basis

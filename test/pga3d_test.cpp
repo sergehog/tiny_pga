@@ -1,4 +1,3 @@
-// This code was originally downloaded from bivector.net
 /*
  * This file is part of the Tiny-PGA distribution (https://github.com/sergehog/tiny_pga)
  * Copyright (c) 2020 Sergey Smirnov / Seregium Oy.
@@ -24,7 +23,7 @@ using namespace float_basis;
 TEST(PGA3DTest, BasicTest)
 {
     // Elements of the even subalgebra (scalar + bivector + pss) of unit length are motors
-    PGA3D<> rot = rotor(PI / 2.0f, e1 * e2);
+    PGA3D<> rot = rotor(float(PI) / 2.0f, e1 * e2);
 
     // The outer product ^ is the MEET. Here we intersect the yz (x=0) and xz (y=0) planes.
     PGA3D<> ax_z = e1 ^ e2;
@@ -64,6 +63,11 @@ TEST(PGA3DTest, BasicTest)
     log(rotated_plane);
     printf("point on plane: ");
     log(point_on_plane.normalized());
+    printf("points on circle: ");
+    for (float x = 0.F; x < 1.F; x += 0.1)
+    {
+        log(circle(x, 1.0f, PGA3D<>(kE12)));
+    }
     printf("point on torus: ");
     log(point_on_torus(0.0f, 0.0f));
     log(e0 - 1.0f);
@@ -118,6 +122,61 @@ TEST(PGA3DTest, ConstMotorEstimatorTest)
     EXPECT_NEAR((Bi * Bi)[0], 0.F, 0.0001);
     EXPECT_NEAR((Bi * Bi)[0], 0.F, 0.0001);
 }
+
+class PGA3D3FloatsTest : public ::testing::TestWithParam<std::tuple<float, float, float>>
+{
+  public:
+    PGA3D3FloatsTest() = default;
+};
+
+/// Check if my implementation of Euler2Rotor(.) works same as reference one
+TEST_P(PGA3D3FloatsTest, Euler2RotorTest)
+{
+    float yaw{}, pitch{}, roll{};
+    std::tie(yaw, pitch, roll) = GetParam();
+
+    const PGA3D<> A = Euler2Rotor(yaw, pitch, roll);
+    const PGA3D<> B = Euler2RotorReference(yaw, pitch, roll);
+
+    EXPECT_NEAR(A[kScalar], B[kScalar], 0.0001F);
+    EXPECT_NEAR(A[kE12], B[kE12], 0.0001F);
+    EXPECT_NEAR(A[kE23], B[kE23], 0.0001F);
+    EXPECT_NEAR(A[kE31], B[kE31], 0.0001F);
+}
+
+TEST_P(PGA3D3FloatsTest, ProjectPointToLineTest)
+{
+    float x{}, y{}, z{};
+    std::tie(x, y, z) = GetParam();
+    const PGA3D<> P = point(x, y, z);
+    const PGA3D<> line = (P & point(100.F, 200.F, 300.F)).normalized();
+    const PGA3D<> Pout = ((line | P) * line);
+
+    EXPECT_NEAR(Pout[kE123], -1.F, 0.00001F);
+    EXPECT_NEAR(Pout[kE032], -x, 0.00001F);
+    EXPECT_NEAR(Pout[kE013], -y, 0.00001F);
+    EXPECT_NEAR(Pout[kE021], -z, 0.00001F);
+}
+
+// TEST_P(PGA3D3FloatsTest, TranslatorTest)
+//{
+//    float x{}, y{}, z{};
+//    std::tie(x, y, z) = GetParam();
+//    const PGA3D<> P = point(0.F, 0.F, 0.F);
+//    const PGA3D<> T = translator(x, y, z);
+//    const PGA3D<> Pout =  T * P * ~T;
+//
+//    EXPECT_NEAR(Pout[kE123], 1.F, 0.00001F);
+//    EXPECT_NEAR(Pout[kE032], x, 0.00001F);
+//    EXPECT_NEAR(Pout[kE013], y, 0.00001F);
+//    EXPECT_NEAR(Pout[kE021], z, 0.00001F);
+//}
+
+INSTANTIATE_TEST_CASE_P(InstantiationName,
+                        PGA3D3FloatsTest,
+                        testing::Combine(testing::Values(0.F, 0.1F, 0.5F, 3.F),
+                                         testing::Values(0.F, 0.1F, 1.F, 3.F),
+                                         testing::Values(0.F, 0.1F, 2.F, 3.F)));
 
 /// Estimated Motor shall be the same, despite order of given points
 TEST(PGA3DTest, MotorEstimatorStabilityTest)
