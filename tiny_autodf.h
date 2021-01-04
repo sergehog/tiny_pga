@@ -21,6 +21,8 @@
 // Supports partial derivatives (i.e. functions of many variables)
 //
 
+#include <cmath>
+#include <iostream>
 #include <map>
 #include <memory>
 
@@ -226,6 +228,11 @@ class AutoDf
         default_type_ = (need_constant) ? AutoType::kConstType : AutoType::kVariableType;
     }
 
+    static void StartVariables(const bool need_variable = true)
+    {
+        default_type_ = (need_variable) ? AutoType::kVariableType : AutoType::kConstType;
+    }
+
     /// Creates kVariableType or kConstType (depending on default_type_) with zero value
     AutoDf()
     {
@@ -295,7 +302,7 @@ class AutoDf
     }
 
     /// List of input "mutable" values, contributing to this AutoDf value
-    const std::map<size_t, std::shared_ptr<ScalarType>>& variables() { return node->variables; }
+    std::map<size_t, std::shared_ptr<ScalarType>>& variables() const { return node->variables; }
 
     Evaluation eval() const { return node->eval(); }
 
@@ -545,6 +552,47 @@ DEFINE_OPERATOR(/, make_div);
     AutoDf<float> ____instantiate_template_class;
 
 INSTANTIATE_AUTODF_TEMPLATE(float);
+
+template <typename ScalarType>
+ScalarType GradientDescent(const AutoDf<ScalarType>& minimize_error,
+                           const ScalarType learning_rate_initial,
+                           const ScalarType terminate_value = ScalarType(1e-5),
+                           const std::size_t max_iters = 100U)
+{
+    auto eval = minimize_error.eval();
+    ScalarType last_error = eval.value + 1.F;
+    ScalarType learning_rate = learning_rate_initial;
+    size_t iter = 0U;
+
+    if (std::isnan(last_error))
+    {
+        return last_error;
+    }
+
+    while (iter < max_iters && last_error > terminate_value)
+    {
+        std::cout << iter << ": (";
+        if (eval.value > last_error)
+        {
+            learning_rate /= ScalarType(2);
+            break;
+        }
+        std::cout << learning_rate << ") F[";
+
+        for (auto dx : eval.derivatives)
+        {
+            auto x = minimize_error.variables().at(dx.first);
+            std::cout << *x << ",";
+            *x -= dx.second * learning_rate;
+        }
+        std::cout << "] = " << eval.value << std::endl;
+        last_error = eval.value;
+        eval = minimize_error.eval();
+
+        iter++;
+    }
+    return last_error;
+}
 
 }  // namespace tiny_autodf
 
