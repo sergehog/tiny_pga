@@ -554,44 +554,71 @@ DEFINE_OPERATOR(/, make_div);
 INSTANTIATE_AUTODF_TEMPLATE(float);
 
 template <typename ScalarType>
-ScalarType GradientDescent(const AutoDf<ScalarType>& minimize_error,
-                           const ScalarType learning_rate_initial,
-                           const ScalarType terminate_value = ScalarType(1e-5),
-                           const std::size_t max_iters = 100U)
+typename AutoDf<ScalarType>::Evaluation GradientDescent(const AutoDf<ScalarType>& minimize_error,
+                                                        const ScalarType terminate_criteria = ScalarType(1e-6),
+                                                        const ScalarType initial_rate = ScalarType(0.01),
+                                                        const std::size_t max_iters = 100U)
 {
     auto eval = minimize_error.eval();
-    ScalarType last_error = eval.value + 1.F;
-    ScalarType learning_rate = learning_rate_initial;
-    size_t iter = 0U;
 
-    if (std::isnan(last_error))
+    if (std::isnan(eval.value) || eval.value < terminate_criteria)
     {
-        return last_error;
+        return eval;
     }
 
-    while (iter < max_iters && last_error > terminate_value)
+    auto prev_derivatives = eval.derivatives;
+    std::map<size_t, float> prev_variables{};
+    for (auto x : minimize_error.variables())
     {
-        std::cout << iter << ": (";
-        if (eval.value > last_error)
+        prev_variables[x.first] = *x.second;
+    }
+
+    ScalarType prev_error = eval.value + 1.F;
+    ScalarType learning_rate = initial_rate;
+    size_t iter = 0U;
+
+    while (iter < max_iters && prev_error > terminate_criteria)
+    {
+        if (iter > 0)
         {
-            learning_rate /= ScalarType(2);
-            break;
+            float dot_value = 0.F;
+            float norm_value = 0.F;
+            for (auto x : minimize_error.variables())
+            {
+                const float x_curr = *minimize_error.variables().at(x.first);
+                const float x_prev = prev_variables[x.first];
+                const float dx_curr = eval.derivatives[x.first];
+                const float dx_prev = prev_derivatives[x.first];
+                dot_value += (x_curr - x_prev) * (dx_curr - dx_prev);
+                norm_value += (dx_curr - dx_prev) * (dx_curr - dx_prev);
+            }
+            learning_rate = std::abs(dot_value) / norm_value;
         }
-        std::cout << learning_rate << ") F[";
+
+        if (std::isnan(learning_rate) || learning_rate < terminate_criteria ||
+            std::abs(eval.value) < terminate_criteria)
+        {
+            return eval;
+        }
+
+        std::cout << iter << ": (rate=" << learning_rate << ") F[";
 
         for (auto dx : eval.derivatives)
         {
             auto x = minimize_error.variables().at(dx.first);
+            prev_variables[dx.first] = *x;
+            prev_derivatives[dx.first] = dx.second;
+
             std::cout << *x << ",";
             *x -= dx.second * learning_rate;
         }
         std::cout << "] = " << eval.value << std::endl;
-        last_error = eval.value;
+        prev_error = eval.value;
         eval = minimize_error.eval();
 
         iter++;
     }
-    return last_error;
+    return eval;
 }
 
 }  // namespace tiny_autodf

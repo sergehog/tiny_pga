@@ -92,49 +92,40 @@ TEST(AutoDfPGA3DTest, TryTranslatorOptimizationTest)
     EXPECT_EQ(vars.size(), 8);
 
     auto eval = err.eval();
+    std::cout << "initial error"
+              << ": " << eval.value << std::endl;
     EXPECT_EQ(err.value(), eval.value);
     EXPECT_EQ(eval.derivatives.size(), 8);
 
-    size_t j = 0;
+    auto eval2 = GradientDescent(err, 1e-7F);
+    std::cout << "final error"
+              << ": " << eval2.value << std::endl;
+    EXPECT_NEAR(eval2.value, 0.F, 1e-7);
 
-    std::cout << "error#" << j << ": " << eval.value << std::endl;
     std::cout << "motor: [(" << w.value() << "," << a.value() << "," << b.value() << "," << c.value() << "),"
               << x.value() << "," << y.value() << "," << z.value() << "," << i.value() << "]" << std::endl;
-
-    float err_prev = std::abs(eval.value) + 1.F;
-    const float learning_rate = 0.02;
-
-    while (std::abs(eval.value) < err_prev && j < 200)
-    {
-        err_prev = std::abs(eval.value);
-
-        w.value() -= eval.derivatives[w.ID()] * learning_rate;
-        a.value() -= eval.derivatives[a.ID()] * learning_rate;
-        b.value() -= eval.derivatives[b.ID()] * learning_rate;
-        c.value() -= eval.derivatives[c.ID()] * learning_rate;
-        x.value() -= eval.derivatives[x.ID()] * learning_rate;
-        y.value() -= eval.derivatives[y.ID()] * learning_rate;
-        z.value() -= eval.derivatives[z.ID()] * learning_rate;
-        i.value() -= eval.derivatives[i.ID()] * learning_rate;
-        j++;
-
-        eval = err.eval();
-
-        std::cout << "error#" << j << ": " << eval.value << std::endl;
-        std::cout << "motor: [(" << w.value() << "," << a.value() << "," << b.value() << "," << c.value() << "),"
-                  << x.value() << "," << y.value() << "," << z.value() << "," << i.value() << "]" << std::endl;
-    }
 
     APGA V = w * APGA(kScalar) + a * e12 + b * e31 + c * e23 + x * e01 + y * e02 + z * e03 + i * I;
     auto Ai = V * A * ~V - A1;
     std::cout << "V*A*~V - A1 = [" << Ai[kE013].value() << "," << Ai[kE021].value() << "," << Ai[kE032].value() << "]"
               << std::endl;
+    EXPECT_NEAR(Ai[kE013].value(), 0.F, 1e-5F);
+    EXPECT_NEAR(Ai[kE021].value(), 0.F, 1e-5F);
+    EXPECT_NEAR(Ai[kE032].value(), 0.F, 1e-4F);
 
     auto Bi = V * B * ~V - B1;
     std::cout << "V*B*~V - B1 = [" << Bi[kE013].value() << "," << Bi[kE021].value() << "," << Bi[kE032].value() << "]"
               << std::endl;
 
+    EXPECT_NEAR(Bi[kE013].value(), 0.F, 1e-5F);
+    EXPECT_NEAR(Bi[kE021].value(), 0.F, 1e-5F);
+    EXPECT_NEAR(Bi[kE032].value(), 0.F, 1e-4F);
+
     auto Ci = V * C * ~V - C1;
     std::cout << "V*C*~V - C1 = [" << Ci[kE013].value() << "," << Ci[kE021].value() << "," << Ci[kE032].value() << "]"
               << std::endl;
+
+    EXPECT_NEAR(Ci[kE013].value(), 0.F, 1e-5F);
+    EXPECT_NEAR(Ci[kE021].value(), 0.F, 1e-5F);
+    EXPECT_NEAR(Ci[kE032].value(), 0.F, 1e-4F);
 }
