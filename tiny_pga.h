@@ -1,6 +1,6 @@
 /*
  * This file is part of the Tiny-PGA distribution (https://github.com/sergehog/tiny_pga)
- * Copyright (c) 2020 Sergey Smirnov / Seregium Oy.
+ * Copyright (c) 2020-2021 Sergey Smirnov / Seregium Oy.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,25 +44,25 @@ namespace elems
 enum class BitValues : Elems
 {
     // Vector
-    kE0 = (1U << 0),
-    kE1 = (1U << 1),
-    kE2 = (1U << 2),
-    kE3 = (1U << 3),
+    kE0 = (1U << 0U),
+    kE1 = (1U << 1U),
+    kE2 = (1U << 2U),
+    kE3 = (1U << 3U),
     // BivectorE
-    kScalar = (1U << 4),
-    kE12 = (1U << 5),
-    kE31 = (1U << 6),
-    kE23 = (1U << 7),
+    kScalar = (1U << 4U),
+    kE12 = (1U << 5U),
+    kE31 = (1U << 6U),
+    kE23 = (1U << 7U),
     // Bivector0
-    kE01 = (1U << 8),
-    kE02 = (1U << 9),
-    kE03 = (1U << 10),
-    kE0123 = (1U << 11),
+    kE01 = (1U << 8U),
+    kE02 = (1U << 9U),
+    kE03 = (1U << 10U),
+    kE0123 = (1U << 11U),
     // Trivector
-    kE021 = (1U << 12),
-    kE013 = (1U << 13),
-    kE032 = (1U << 14),
-    kE123 = (1U << 15),
+    kE021 = (1U << 12U),
+    kE013 = (1U << 13U),
+    kE032 = (1U << 14U),
+    kE123 = (1U << 15U),
 };
 
 constexpr bool has_scalar(const Elems elem)
@@ -364,88 +364,96 @@ struct Multivector
     using Rotor = Multivector<elems::RotorElems, ScalarType>;
     using Translator = Multivector<elems::TranslatorElems, ScalarType>;
     using Motor = Multivector<elems::MotorElems, ScalarType>;
-
-    template <bool Condition, typename T>
-    struct Conditional
-    {
-        T value;
-    };
-    template <typename T>
-    struct Conditional<false, T>
-    {
-    };
-
-    // Optimization of Memory Footprint with use of conditional elements
-    Conditional<elems::has_vector(elements), std::array<ScalarType, 4U>> Vector;
-    Conditional<elems::has_bivectorE(elements), std::array<ScalarType, 4U>> BivectorE;
-    Conditional<elems::has_bivector0(elements), std::array<ScalarType, 4U>> Bivector0;
-    Conditional<elems::has_trivector(elements), std::array<ScalarType, 4U>> Trivector;
-
     /// Exposing elements outside, as static const value
     static constexpr Elems Elements = elements;
 
+    //    template <bool Condition, typename T>
+    //    struct Conditional
+    //    {
+    //        T value;
+    //    };
+    //    template <typename T>
+    //    struct Conditional<false, T>
+    //    {
+    //    };
+    //
+    //
+    //    // Optimization of Memory Footprint with use of conditional elements
+    //    Conditional<elems::has_vector(elements), std::array<ScalarType, 4U>> Vector;
+    //    Conditional<elems::has_bivectorE(elements), std::array<ScalarType, 4U>> BivectorE;
+    //    Conditional<elems::has_bivector0(elements), std::array<ScalarType, 4U>> Bivector0;
+    //    Conditional<elems::has_trivector(elements), std::array<ScalarType, 4U>> Trivector;
     // In this macro we define setter and read-only getter functions,
     // as well as define private stub function, in case if element does not exist
-#define ELEM_ACCESS_FUNCTION(element_name, array_position)                                      \
-    template <typename T = ScalarType>                                                          \
-    typename std::enable_if<elems::has_##element_name(elements), T>::type& element_name()       \
-    {                                                                                           \
-        return array_position;                                                                  \
-    };                                                                                          \
-    template <typename T = ScalarType>                                                          \
-    typename std::enable_if<elems::has_##element_name(elements), T>::type element_name() const  \
-    {                                                                                           \
-        return array_position;                                                                  \
-    }                                                                                           \
-    template <typename T = ScalarType>                                                          \
-    typename std::enable_if<!elems::has_##element_name(elements), T>::type& element_name()      \
-    {                                                                                           \
-        return stub_element;                                                                    \
-    }                                                                                           \
-    template <typename T = ScalarType>                                                          \
-    typename std::enable_if<!elems::has_##element_name(elements), T>::type element_name() const \
-    {                                                                                           \
-        return 0.;                                                                              \
-    }
+    //#define ELEM_ACCESS_FUNCTION(element_name, array_position)                                      \
+//    template <typename T = ScalarType>                                                          \
+//    typename std::enable_if<elems::has_##element_name(elements), T>::type& element_name()       \
+//    {                                                                                           \
+//        return array_position;                                                                  \
+//    };                                                                                          \
+//    template <typename T = ScalarType>                                                          \
+//    typename std::enable_if<elems::has_##element_name(elements), T>::type element_name() const  \
+//    {                                                                                           \
+//        return array_position;                                                                  \
+//    }                                                                                           \
+//    template <typename T = ScalarType>                                                          \
+//    typename std::enable_if<!elems::has_##element_name(elements), T>::type& element_name()      \
+//    {                                                                                           \
+//        return stub_element;                                                                    \
+//    }                                                                                           \
+//    template <typename T = ScalarType>                                                          \
+//    typename std::enable_if<!elems::has_##element_name(elements), T>::type element_name() const \
+//    {                                                                                           \
+//        return 0.;                                                                              \
+//    }
 
-    ELEM_ACCESS_FUNCTION(e0, Vector.value[0]);
-    ELEM_ACCESS_FUNCTION(e1, Vector.value[1]);
-    ELEM_ACCESS_FUNCTION(e2, Vector.value[2]);
-    ELEM_ACCESS_FUNCTION(e3, Vector.value[3]);
+    std::array<ScalarType, 4U> Vector;
+    std::array<ScalarType, 4U> BivectorE;
+    std::array<ScalarType, 4U> Bivector0;
+    std::array<ScalarType, 4U> Trivector;
 
-    ELEM_ACCESS_FUNCTION(e01, Bivector0.value[0]);
-    ELEM_ACCESS_FUNCTION(e02, Bivector0.value[1]);
-    ELEM_ACCESS_FUNCTION(e03, Bivector0.value[2]);
-    ELEM_ACCESS_FUNCTION(e0123, Bivector0.value[3]);
+#define ELEM_ACCESS_FUNCTION(element_name, array_position) \
+    ScalarType& element_name() { return array_position; }; \
+    ScalarType element_name() const { return array_position; }
 
-    ELEM_ACCESS_FUNCTION(scalar, BivectorE.value[0]);
-    ELEM_ACCESS_FUNCTION(e12, BivectorE.value[1]);
-    ELEM_ACCESS_FUNCTION(e31, BivectorE.value[2]);
-    ELEM_ACCESS_FUNCTION(e23, BivectorE.value[3]);
+    ELEM_ACCESS_FUNCTION(e0, Vector[0]);
+    ELEM_ACCESS_FUNCTION(e1, Vector[1]);
+    ELEM_ACCESS_FUNCTION(e2, Vector[2]);
+    ELEM_ACCESS_FUNCTION(e3, Vector[3]);
 
-    ELEM_ACCESS_FUNCTION(e021, Trivector.value[0]);
-    ELEM_ACCESS_FUNCTION(e013, Trivector.value[1]);
-    ELEM_ACCESS_FUNCTION(e032, Trivector.value[2]);
-    ELEM_ACCESS_FUNCTION(e123, Trivector.value[3]);
+    ELEM_ACCESS_FUNCTION(e01, Bivector0[0]);
+    ELEM_ACCESS_FUNCTION(e02, Bivector0[1]);
+    ELEM_ACCESS_FUNCTION(e03, Bivector0[2]);
+    ELEM_ACCESS_FUNCTION(e0123, Bivector0[3]);
+
+    ELEM_ACCESS_FUNCTION(scalar, BivectorE[0]);
+    ELEM_ACCESS_FUNCTION(e12, BivectorE[1]);
+    ELEM_ACCESS_FUNCTION(e31, BivectorE[2]);
+    ELEM_ACCESS_FUNCTION(e23, BivectorE[3]);
+
+    ELEM_ACCESS_FUNCTION(e021, Trivector[0]);
+    ELEM_ACCESS_FUNCTION(e013, Trivector[1]);
+    ELEM_ACCESS_FUNCTION(e032, Trivector[2]);
+    ELEM_ACCESS_FUNCTION(e123, Trivector[3]);
 #undef DEFINE_ELEM_FUNCTION
 
-    template <class T = Multivector<elems::RotorElems>>
-    typename std::enable_if<elems::has_bivectorE(elements), T>::type rotor()
-    {
-        return Rotor{BivectorE.value};
-    }
-
-    template <class T = Multivector<elems::TranslatorElems>>
-    typename std::enable_if<elems::has_bivector0(elements), T>::type translator()
-    {
-        return Translator{Bivector0.value};
-    }
-
-    template <class T = Multivector<elems::MotorElems>>
-    typename std::enable_if<elems::has_bivector0(elements), T>::type motor()
-    {
-        return Motor{BivectorE.value, Bivector0.value};
-    }
+    //    template <class T = Multivector<elems::RotorElems>>
+    //    typename std::enable_if<elems::has_bivectorE(elements), T>::type rotor()
+    //    {
+    //        return Rotor{BivectorE.value};
+    //    }
+    //
+    //    template <class T = Multivector<elems::TranslatorElems>>
+    //    typename std::enable_if<elems::has_bivector0(elements), T>::type translator()
+    //    {
+    //        return Translator{Bivector0.value};
+    //    }
+    //
+    //    template <class T = Multivector<elems::MotorElems>>
+    //    typename std::enable_if<elems::has_bivector0(elements), T>::type motor()
+    //    {
+    //        return Motor{BivectorE.value, Bivector0.value};
+    //    }
 
     /// Generic multiplication operator
     /// When using it, elements of resulting multivector (i.e. Blades) might grow, even though their
@@ -637,6 +645,7 @@ struct Multivector
             ELEM_BOTH_MULTIPLY(e0123, e02, e31, +=, +=);
             ELEM_BOTH_MULTIPLY(e0123, e03, e12, +=, +=);
         }
+#undef ELEM_BOTH_MULTIPLY
         return out;
     }
 
@@ -646,31 +655,34 @@ struct Multivector
         Multivector<elements, ScalarType> out{};
         if (elems::has_vector(elements))
         {
-            out.Vector.value = Vector.value;
+            out.Vector[0] = Vector[0];
+            out.Vector[1] = Vector[1];
+            out.Vector[2] = Vector[2];
+            out.Vector[3] = Vector[3];
         }
 
         if (elems::has_bivector0(elements))
         {
-            out.Bivector0.value[0] = -Bivector0.value[0];
-            out.Bivector0.value[1] = -Bivector0.value[1];
-            out.Bivector0.value[2] = -Bivector0.value[2];
-            out.Bivector0.value[3] = Bivector0.value[3];
+            out.Bivector0[0] = -Bivector0[0];
+            out.Bivector0[1] = -Bivector0[1];
+            out.Bivector0[2] = -Bivector0[2];
+            out.Bivector0[3] = Bivector0[3];
         }
 
         if (elems::has_bivectorE(elements))
         {
-            out.BivectorE.value[0] = BivectorE.value[0];
-            out.BivectorE.value[1] = -BivectorE.value[1];
-            out.BivectorE.value[2] = -BivectorE.value[2];
-            out.BivectorE.value[3] = -BivectorE.value[3];
+            out.BivectorE[0] = BivectorE[0];
+            out.BivectorE[1] = -BivectorE[1];
+            out.BivectorE[2] = -BivectorE[2];
+            out.BivectorE[3] = -BivectorE[3];
         }
 
         if (elems::has_trivector(elements))
         {
-            out.Trivector.value[0] = -Trivector.value[0];
-            out.Trivector.value[1] = -Trivector.value[1];
-            out.Trivector.value[2] = -Trivector.value[2];
-            out.Trivector.value[3] = -Trivector.value[3];
+            out.Trivector[0] = -Trivector[0];
+            out.Trivector[1] = -Trivector[1];
+            out.Trivector[2] = -Trivector[2];
+            out.Trivector[3] = -Trivector[3];
         }
         return out;
     }
@@ -678,7 +690,7 @@ struct Multivector
     Multivector<elements, ScalarType> sandwich(const Motor& motor) const
     {
         Multivector<elements, ScalarType> out;
-        auto res = motor * *this * ~motor;
+        auto res = motor * (*this) * (~motor);
         if (elems::has_vector(elements))
         {
             out.Vector = res.Vector;
@@ -701,7 +713,7 @@ struct Multivector
     Multivector<elements, ScalarType> sandwich(const Rotor& rotor) const
     {
         Multivector<elements, ScalarType> out;
-        auto res = rotor * *this * ~rotor;
+        auto res = rotor * (*this) * (~rotor);
         if (elems::has_vector(elements))
         {
             out.Vector = res.Vector;
@@ -724,7 +736,7 @@ struct Multivector
     Multivector<elements, ScalarType> sandwich(const Translator& translator) const
     {
         Multivector<elements, ScalarType> out;
-        auto res = (translator * *this) * ~translator;
+        auto res = translator * (*this) * (~translator);
         if (elems::has_vector(elements))
         {
             out.Vector = res.Vector;
@@ -786,9 +798,25 @@ struct Multivector
         point.e123() = 1.F;
         return point;
     }
-
-    ScalarType stub_element = 0;
 };
+//
+// template<template <Elems elements, typename ScalarType>
+// struct Multivector<elements, ScalarType>
+//{
+//    Multivector()
+//    {
+//    }
+//};
+//
+//
+// template<>
+// struct Multivector<elems::PointElems, float>
+//{
+//    Multivector(const float x, const float y, const float z)
+//    {
+//        Trivector.value = {x, y, z, 1.F};
+//    }
+//};
 
 }  // namespace tiny_pga
 

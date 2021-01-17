@@ -1,6 +1,6 @@
 /*
  * This file is part of the Tiny-PGA distribution (https://github.com/sergehog/tiny_pga)
- * Copyright (c) 2020 Sergey Smirnov / Seregium Oy.
+ * Copyright (c) 2020-2021 Sergey Smirnov / Seregium Oy.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,9 +49,13 @@ TEST(BasicTest, MultiplicationElementsTest)
     EXPECT_EQ(OutMotorElems, elems::MotorElems);
 
     // after sandwich with a rotor/translator/motor, PGA primitive must remain the same
-    //    Elems OutElems = elems::multiplication(
-    //        elems::multiplication(elems::RotorElems, elems::PlaneElems), elems::RotorElems);
-    //    EXPECT_EQ(OutElems, elems::PlaneElems);
+    Elems OutElems =
+        elems::multiplication(elems::multiplication(elems::RotorElems, elems::PointElems), elems::RotorElems);
+
+    EXPECT_TRUE(elems::has_e021(OutElems));
+    EXPECT_TRUE(elems::has_e013(OutElems));
+    EXPECT_TRUE(elems::has_e032(OutElems));
+    EXPECT_TRUE(elems::has_e123(OutElems));
 }
 
 /// Test class for checking all possible element combinations

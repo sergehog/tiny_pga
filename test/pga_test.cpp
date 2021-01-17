@@ -1,6 +1,6 @@
 /*
  * This file is part of the Tiny-PGA distribution (https://github.com/sergehog/tiny_pga)
- * Copyright (c) 2020 Sergey Smirnov / Seregium Oy.
+ * Copyright (c) 2020-2021 Sergey Smirnov / Seregium Oy.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -71,117 +71,50 @@ TEST(BasicTest, SquaringTest)
     EXPECT_EQ(b.scalar(), 2 * 2 + 3 * 3 + 4 * 4);
 }
 
-// TEST(BasicTest, SandwichAutoTest)
-//{
-//    tiny_pga::PointF point{{}, {}, {}, {1.f, 2.f, 3.f, 0.F}};
-//
-//    tiny_pga::TranslatorF t {{},{5.f, 7.f, 9.f, 11.F}};
-//
-//    tiny_pga::PointF p2 = point.sandwich(t);
-//    EXPECT_EQ(p2.e01(), 11.F);
-//}
-
-/*
-template <Elems elems>
-struct AllPgaTest
+TEST(BasicTest, RotorTest)
 {
-    static void RunTest()
-    {
-        tiny_pga::Multivector<elems> pga {};
-        if(elems::has_scalar(elems))
-        {
-            pga.scalar() = 1.F;
-        }
-        if(elems::has_e0(elems))
-        {
-            pga.e0() = 1.F;
-        }
-        if(elems::has_e1(elems))
-        {
-            pga.e1() = 1.F;
-        }
-        if(elems::has_e2(elems))
-        {
-            pga.e2() = 1.F;
-        }
-        if(elems::has_e3(elems))
-        {
-            pga.e3() = 1.F;
-        }
-        if(elems::has_e01(elems))
-        {
-            pga.e01() = 1.F;
-        }
-        if(elems::has_e02(elems))
-        {
-            pga.e02() = 1.F;
-        }
-        if(elems::has_e03(elems))
-        {
-            pga.e03() = 1.F;
-        }
-        if(elems::has_e31(elems))
-        {
-            pga.e31() = 1.F;
-        }
-        if(elems::has_e23(elems))
-        {
-            pga.e23() = 1.F;
-        }
-        if(elems::has_e12(elems))
-        {
-            pga.e12() = 1.F;
-        }
-        if(elems::has_e021(elems))
-        {
-            pga.e021() = 1.F;
-        }
-        if(elems::has_e013(elems))
-        {
-            pga.e013() = 1.F;
-        }
-        if(elems::has_e032(elems))
-        {
-            pga.e032() = 1.F;
-        }
-        if(elems::has_e123(elems))
-        {
-            pga.e123() = 1.F;
-        }
-        if(elems::has_e0123(elems))
-        {
-            pga.e0123() = 1.F;
-        }
+    tiny_pga::RotorF rotor{{}, {1.F, 0.F, 0.F, 0.F}, {}};
+    tiny_pga::PointF point{{}, {}, {}, {1.f, 2.f, 3.f, 1.F}};
 
-        constexpr Elems res_elems = elems::multiplication(elems, elems);
-        tiny_pga::Multivector<res_elems> result = pga * pga;
+    const auto a = rotor * point * ~rotor;
 
-        if(elems::has_scalar(res_elems))
-        {
-            float scalar = 0.F;
-            scalar += elems::has_scalar(elems);
-            scalar += elems::has_e1(elems);
-            scalar += elems::has_e2(elems);
-            scalar += elems::has_e3(elems);
-            scalar -= elems::has_e12(elems);
-            scalar -= elems::has_e31(elems);
-            scalar -= elems::has_e23(elems);
-            scalar -= elems::has_e123(elems);
+    EXPECT_NEAR(a.scalar(), 0.F, 1e-5);
+    EXPECT_NEAR(a.e0(), 0.F, 1e-5);
 
-            EXPECT_EQ(pga.scalar(), scalar);
-        }
-
-
-
-        if(elems < std::numeric_limits<Elems>::max())
-        {
-            AllPgaTest<elems+1>::RunTest();
-        }
-    }
-
-};
-TEST(BasicTest, MultivectorSquaringTest)
-{
-    AllPgaTest<0>::RunTest();
+    EXPECT_NEAR(a.e021(), point.e021(), 1e-5);
+    EXPECT_NEAR(a.e013(), point.e013(), 1e-5);
+    EXPECT_NEAR(a.e032(), point.e032(), 1e-5);
 }
-*/
+
+TEST(BasicTest, ReverseTest)
+{
+    tiny_pga::RotorF rotor{{1.F, 0.F, 0.F, 0.F}, {11.F, 12.F, 13.F, 14.F}, {}};
+    tiny_pga::PointF point{{}, {}, {}, {1.f, 2.f, 3.f, 4.F}};
+
+    tiny_pga::RotorF r = ~rotor;
+    tiny_pga::PointF p = ~point;
+
+    EXPECT_NEAR(r.e021(), -rotor.e021(), 1e-5);
+    EXPECT_NEAR(r.e013(), -rotor.e013(), 1e-5);
+    EXPECT_NEAR(r.e032(), -rotor.e032(), 1e-5);
+    EXPECT_NEAR(r.e123(), -rotor.e123(), 1e-5);
+
+    EXPECT_NEAR(p.e021(), -point.e021(), 1e-5);
+    EXPECT_NEAR(p.e013(), -point.e013(), 1e-5);
+    EXPECT_NEAR(p.e032(), -point.e032(), 1e-5);
+    EXPECT_NEAR(p.e123(), -point.e123(), 1e-5);
+}
+
+//
+TEST(BasicTest, SandwichRotorTest)
+{
+    tiny_pga::RotorF rotor{{}, {1.F, 0.F, 0.F, 0.F}, {}};
+    tiny_pga::PointF point{{}, {}, {}, {1.f, 2.f, 3.f, 1.F}};
+
+    tiny_pga::PointF a = point.sandwich(rotor);
+
+    EXPECT_NEAR(a.e021(), point.e021(), 1e-5);
+    EXPECT_NEAR(a.e013(), point.e013(), 1e-5);
+    EXPECT_NEAR(a.e032(), point.e032(), 1e-5);
+    EXPECT_NEAR(a.e123(), point.e123(), 1e-5);
+}
