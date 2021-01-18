@@ -49,7 +49,12 @@ class AutoDf
         kSumType,       // result of sum of 2 other AutoDf
         kSubtractType,  // result of subtract of 2 other AutoDf
         kMultType,      // result of multiplication of 2 other AutoDf
-        kDivType        // result of divition of 2 other AutoDf
+        kDivType,       // result of divition of 2 other AutoDf
+        kAbsType,
+        kMaxType,
+        kMinType,
+        kSinType,
+        kCosType
     };
 
   private:
@@ -184,6 +189,138 @@ class AutoDf
                 }
                 *value = eval_out.value;
             }
+            else if (type == AutoType::kAbsType)
+            {
+                const auto eval1 = left->eval();
+                const ScalarType v1 = eval1.value;
+                eval_out.value = std::abs(v1);
+                const bool sign_changed = v1 < ScalarType(0.);
+
+                for (auto vi = variables.begin(); vi != variables.end(); vi++)
+                {
+                    const size_t id = vi->first;
+                    const float d1 = eval1.derivatives.at(id);
+                    eval_out.derivatives[id] = sign_changed ? -d1 : d1;
+                }
+                *value = eval_out.value;
+            }
+            else if (type == AutoType::kMaxType)
+            {
+                const auto eval1 = left->eval();
+                const auto eval2 = right->eval();
+                const ScalarType v1 = eval1.value;
+                const ScalarType v2 = eval1.value;
+                const bool left_selected = v1 >= v2;
+                if (left_selected)
+                {
+                    eval_out.value = v1;
+                    for (auto vi = variables.begin(); vi != variables.end(); vi++)
+                    {
+                        const size_t id = vi->first;
+                        const auto d1 = eval1.derivatives.find(id);
+                        if (d1 != eval1.derivatives.end())
+                        {
+                            eval_out.derivatives[id] = d1->second;
+                        }
+                        else
+                        {
+                            eval_out.derivatives[id] = ScalarType(0.);
+                        }
+                    }
+                }
+                else
+                {
+                    eval_out.value = v2;
+                    for (auto vi = variables.begin(); vi != variables.end(); vi++)
+                    {
+                        const size_t id = vi->first;
+                        const auto d2 = eval2.derivatives.find(id);
+                        if (d2 != eval1.derivatives.end())
+                        {
+                            eval_out.derivatives[id] = d2->second;
+                        }
+                        else
+                        {
+                            eval_out.derivatives[id] = ScalarType(0.);
+                        }
+                    }
+                }
+
+                *value = eval_out.value;
+            }
+            else if (type == AutoType::kMinType)
+            {
+                const auto eval1 = left->eval();
+                const auto eval2 = right->eval();
+                const ScalarType v1 = eval1.value;
+                const ScalarType v2 = eval1.value;
+                const bool left_selected = v1 <= v2;
+                if (left_selected)
+                {
+                    eval_out.value = v1;
+                    for (auto vi = variables.begin(); vi != variables.end(); vi++)
+                    {
+                        const size_t id = vi->first;
+                        const auto d1 = eval1.derivatives.find(id);
+                        if (d1 != eval1.derivatives.end())
+                        {
+                            eval_out.derivatives[id] = d1->second;
+                        }
+                        else
+                        {
+                            eval_out.derivatives[id] = ScalarType(0.);
+                        }
+                    }
+                }
+                else
+                {
+                    eval_out.value = v2;
+                    for (auto vi = variables.begin(); vi != variables.end(); vi++)
+                    {
+                        const size_t id = vi->first;
+                        const auto d2 = eval2.derivatives.find(id);
+                        if (d2 != eval1.derivatives.end())
+                        {
+                            eval_out.derivatives[id] = d2->second;
+                        }
+                        else
+                        {
+                            eval_out.derivatives[id] = ScalarType(0.);
+                        }
+                    }
+                }
+                *value = eval_out.value;
+            }
+            else if (type == AutoType::kSinType)
+            {
+                const auto eval1 = left->eval();
+                const ScalarType v1 = eval1.value;
+                eval_out.value = std::sin(v1);
+                const bool sign_changed = v1 < ScalarType(0.);
+
+                for (auto vi = variables.begin(); vi != variables.end(); vi++)
+                {
+                    const size_t id = vi->first;
+                    const float d1 = eval1.derivatives.at(id);
+                    eval_out.derivatives[id] = std::cos(eval1.value) * d1;
+                }
+                *value = eval_out.value;
+            }
+            else if (type == AutoType::kCosType)
+            {
+                const auto eval1 = left->eval();
+                const ScalarType v1 = eval1.value;
+                eval_out.value = std::cos(v1);
+                const bool sign_changed = v1 < ScalarType(0.);
+
+                for (auto vi = variables.begin(); vi != variables.end(); vi++)
+                {
+                    const size_t id = vi->first;
+                    const float d1 = eval1.derivatives.at(id);
+                    eval_out.derivatives[id] = -std::sin(eval1.value) * d1;
+                }
+                *value = eval_out.value;
+            }
 
             return eval_out;
         };
@@ -205,9 +342,17 @@ class AutoDf
         node = std::make_shared<CallGraphNode>((++id_increment), type, value);
         node->left = left;
         node->right = right;
-        node->count = left->count + right->count;
-        node->variables.insert(left->variables.begin(), left->variables.end());
-        node->variables.insert(right->variables.begin(), right->variables.end());
+        node->count = 0U;
+        if (left)
+        {
+            node->count += left->count;
+            node->variables.insert(left->variables.begin(), left->variables.end());
+        }
+        if (right)
+        {
+            node->count += right->count;
+            node->variables.insert(right->variables.begin(), right->variables.end());
+        }
     }
 
     AutoDf(const std::shared_ptr<CallGraphNode>& node_in) : node(node_in) {}
@@ -306,7 +451,7 @@ class AutoDf
 
     Evaluation eval() const { return node->eval(); }
 
-    /// Retrieves latest calculated value
+    /// Retrieves latest calculated valueabs
     ScalarType& value() const
     {
         if (node->type == AutoType::kVariableType)
@@ -398,6 +543,33 @@ class AutoDf
         }
 
         return InPlaceOperator(AutoType::kSubtractType, other.node, *node->value - *other.node->value);
+    }
+
+    static AutoDf<ScalarType> abs(const AutoDf<ScalarType>& other)
+    {
+        return AutoDf<ScalarType>(AutoType::kAbsType, other.node, nullptr, std::abs(*other.node->value));
+    }
+
+    static AutoDf<ScalarType> min(const AutoDf<ScalarType>& left, const AutoDf<ScalarType>& right)
+    {
+        return AutoDf<ScalarType>(
+            AutoType::kMinType, left.node, right.node, std::min(*left.node->value, *right.node->value));
+    }
+
+    static AutoDf<ScalarType> max(const AutoDf<ScalarType>& left, const AutoDf<ScalarType>& right)
+    {
+        return AutoDf<ScalarType>(
+            AutoType::kMaxType, left.node, right.node, std::max(*left.node->value, *right.node->value));
+    }
+
+    static AutoDf<ScalarType> sin(const AutoDf<ScalarType>& other)
+    {
+        return AutoDf<ScalarType>(AutoType::kSinType, other.node, nullptr, std::sin(*other.node->value));
+    }
+
+    static AutoDf<ScalarType> cos(const AutoDf<ScalarType>& other)
+    {
+        return AutoDf<ScalarType>(AutoType::kCosType, other.node, nullptr, std::cos(*other.node->value));
     }
 
 #define DEFINE_OPERATOR(op)                                                     \
@@ -620,6 +792,50 @@ typename AutoDf<ScalarType>::Evaluation GradientDescent(const AutoDf<ScalarType>
     }
     return eval;
 }
+
+template <typename ScalarType>
+AutoDf<ScalarType> abs(const AutoDf<ScalarType>& other)
+{
+    return AutoDf<ScalarType>::abs(other);
+}
+
+template <typename ScalarType>
+AutoDf<ScalarType> min(const AutoDf<ScalarType>& left, const AutoDf<ScalarType>& right)
+{
+    return AutoDf<ScalarType>::min(left, right);
+}
+
+template <typename ScalarType>
+AutoDf<ScalarType> max(const AutoDf<ScalarType>& left, const AutoDf<ScalarType>& right)
+{
+    return AutoDf<ScalarType>::max(left, right);
+}
+
+template <typename ScalarType>
+AutoDf<ScalarType> sin(const AutoDf<ScalarType>& other)
+{
+    return AutoDf<ScalarType>::sin(other);
+}
+
+template <typename ScalarType>
+AutoDf<ScalarType> cos(const AutoDf<ScalarType>& other)
+{
+    return AutoDf<ScalarType>::cos(other);
+}
+
+// template <typename ScalarType, std::size_t Size>
+// typename AutoDf<ScalarType>::Evaluation LevenbergMarquardt(const std::array<AutoDf<ScalarType>, Size>& A_list,
+//                                                          const std::array<ScalarType, Size>& b = {})
+//{
+//    // list all available variables
+//    std::map<size_t, std::shared_ptr<ScalarType>> variables;
+//    for(size_t i =0; i<Size; i++)
+//    {
+//        auto vars = A_list[i].variables();
+//        variables.insert(vars.begin(), vars.end());
+//    }
+//
+//}
 
 }  // namespace tiny_autodf
 

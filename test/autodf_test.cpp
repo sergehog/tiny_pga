@@ -202,3 +202,55 @@ TEST(BasicAutodiffTest, MultiplicationTest)
     EXPECT_EQ(xe.derivatives[x.ID()], 1.F);
     EXPECT_EQ(ye.derivatives[x.ID()], 4 * x.value());
 }
+
+TEST(BasicAutodiffTest, AbsMinMaxTest)
+{
+    AutoDf<>::StartVariables();
+    AutoDf<> x = 7.F;
+    AutoDf<> y = -5.F;
+    AutoDf<>::StartConstants();
+    AutoDf<> absx = abs(x);
+    AutoDf<> absy = abs(y);
+
+    ASSERT_EQ(absx.value(), 7.F);
+    ASSERT_EQ(absy.value(), 5.F);
+
+    ASSERT_EQ(min(x, y).value(), -5.F);
+    ASSERT_EQ(max(x, y).value(), 7.F);
+
+    ASSERT_EQ(min(absx, absy).value(), 5.F);
+    ASSERT_EQ(max(-absx, -absy).value(), -5.F);
+
+    auto ex = absx.eval();
+    auto ey = absy.eval();
+    ASSERT_EQ(ex.value, absx.value());
+    ASSERT_EQ(ey.value, absy.value());
+    ASSERT_EQ(ex.derivatives.size(), 1);
+    ASSERT_EQ(ey.derivatives.size(), 1);
+
+    ASSERT_EQ(ex.derivatives.begin()->second, 1.F);
+    ASSERT_EQ(ey.derivatives.begin()->second, -1.F);
+}
+
+TEST(BasicAutodiffTest, AbsSinCosTest)
+{
+    AutoDf<>::StartVariables();
+    AutoDf<> x = 7.F;
+    AutoDf<>::StartConstants();
+    AutoDf<> sinx = sin(x);
+    AutoDf<> cosx = cos(x);
+
+    ASSERT_EQ(sinx.value(), std::sin(7.F));
+    ASSERT_EQ(cosx.value(), std::cos(7.F));
+
+    auto e1 = sinx.eval();
+    auto e2 = cosx.eval();
+
+    ASSERT_EQ(e1.value, sinx.value());
+    ASSERT_EQ(e2.value, cosx.value());
+    ASSERT_EQ(e1.derivatives.size(), 1);
+    ASSERT_EQ(e2.derivatives.size(), 1);
+
+    ASSERT_EQ(e1.derivatives.begin()->second, e2.value);
+    ASSERT_EQ(e2.derivatives.begin()->second, -e1.value);
+}
