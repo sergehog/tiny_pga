@@ -25,12 +25,12 @@ TEST(BasicAutodiffTest, OneDependentVariableTest)
     AutoDf<> x = 15.F;
     AutoDf<> y = x + 5.F;
     AutoDf<> z = (2.f * x + 2.F) * (y - 3.F);
-    AutoDf<> w = 0.5f * z / (x + 1.F);
+    AutoDf<> w = z / (x + 1.F);
 
     EXPECT_EQ(x.value(), 15.f);
     EXPECT_EQ(y.value(), 20.f);
     EXPECT_EQ(z.value(), 544.f);
-    EXPECT_EQ(w.value(), 0.5f * 544.f / 16.f);
+    EXPECT_EQ(w.value(), 544.f / 16.f);
 
     ASSERT_EQ(x.variables().size(), 1);
     ASSERT_EQ(y.variables().size(), 1);
@@ -57,13 +57,13 @@ TEST(BasicAutodiffTest, OneDependentVariableTest)
     EXPECT_EQ(xe.derivatives[x.ID()], 1.F);
     EXPECT_EQ(ye.derivatives[x.ID()], 1.F);
     EXPECT_EQ(ze.derivatives[x.ID()], 66.F);
-    EXPECT_EQ(we.derivatives[x.ID()], 256.F);
+    EXPECT_EQ(we.derivatives[x.ID()], 2.F);
 
     // nothing changed, except y
     EXPECT_EQ(x.value(), 15.f);
     EXPECT_EQ(y.value(), 25.f);
     EXPECT_EQ(z.value(), 544.f);
-    EXPECT_EQ(w.value(), 0.5f * 544.f / 16.f);
+    EXPECT_EQ(w.value(), 544.f / 16.f);
 
     x.value() += 1.F;
     // re-calculate only one formula, but other are updated too, since they are part of call-graph
@@ -71,7 +71,7 @@ TEST(BasicAutodiffTest, OneDependentVariableTest)
     EXPECT_EQ(x.value(), 16.f);
     EXPECT_EQ(y.value(), 25.f);
     EXPECT_EQ(z.value(), 612.f);
-    EXPECT_EQ(w.value(), 18.f);
+    EXPECT_EQ(w.value(), 36.f);
 }
 
 TEST(BasicAutodiffTest, SumTest)
@@ -201,6 +201,43 @@ TEST(BasicAutodiffTest, MultiplicationTest)
     // all partial derivatives are 1, since only + was used
     EXPECT_EQ(xe.derivatives[x.ID()], 1.F);
     EXPECT_EQ(ye.derivatives[x.ID()], 4 * x.value());
+}
+
+TEST(BasicAutodiffTest, DivisionTest)
+{
+    AutoDf<> x = 7.F;
+    AutoDf<> y = (x - 1.f) / (x + 1.F) / 2.F;
+
+    EXPECT_EQ(x.value(), 7.f);
+    EXPECT_EQ(y.value(), 6.f / 8.F / 2.F);
+
+    ASSERT_EQ(x.variables().size(), 1);
+    ASSERT_EQ(y.variables().size(), 1);
+
+    x.value() -= 1.F;
+    // x value changes, but not others
+    EXPECT_EQ(x.value(), 6.f);
+    EXPECT_EQ(y.value(), 6.f / 8.F / 2.F);
+
+    // re-evaluate
+    auto xe = x.eval();
+    auto ye = y.eval();
+
+    // x value changes, but not others
+    EXPECT_EQ(x.value(), 6.f);
+    EXPECT_EQ(y.value(), 5.f / 7.F / 2.F);
+
+    // evaluation results are the same
+    EXPECT_EQ(x.value(), xe.value);
+    EXPECT_EQ(y.value(), ye.value);
+
+    // number of partial derivatives is 1
+    ASSERT_EQ(xe.derivatives.size(), 1);
+    ASSERT_EQ(ye.derivatives.size(), 1);
+
+    // all partial derivatives are 1, since only + was used
+    EXPECT_EQ(xe.derivatives[x.ID()], 1.F);
+    EXPECT_NEAR(ye.derivatives[x.ID()], 0.0204082F, 0.00001F);
 }
 
 TEST(BasicAutodiffTest, AbsMinMaxTest)
