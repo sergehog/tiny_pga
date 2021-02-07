@@ -158,19 +158,19 @@ TEST_P(PGA3D3FloatsTest, ProjectPointToLineTest)
     EXPECT_NEAR(Pout[kE021], -z, 0.00001F);
 }
 
-// TEST_P(PGA3D3FloatsTest, TranslatorTest)
-//{
-//    float x{}, y{}, z{};
-//    std::tie(x, y, z) = GetParam();
-//    const PGA3D<> P = point(0.F, 0.F, 0.F);
-//    const PGA3D<> T = translator(x, y, z);
-//    const PGA3D<> Pout =  T * P * ~T;
-//
-//    EXPECT_NEAR(Pout[kE123], 1.F, 0.00001F);
-//    EXPECT_NEAR(Pout[kE032], x, 0.00001F);
-//    EXPECT_NEAR(Pout[kE013], y, 0.00001F);
-//    EXPECT_NEAR(Pout[kE021], z, 0.00001F);
-//}
+TEST_P(PGA3D3FloatsTest, TranslatorTest)
+{
+    float x{}, y{}, z{};
+    std::tie(x, y, z) = GetParam();
+    const PGA3D<> P = point(0.F, 0.F, 0.F);
+    const PGA3D<> T = translator(x, y, z);
+    const PGA3D<> Pout = T * P * ~T;
+
+    EXPECT_NEAR(Pout[kE123], 1.F, 0.00001F);
+    EXPECT_NEAR(Pout[kE032], x, 0.00001F);
+    EXPECT_NEAR(Pout[kE013], y, 0.00001F);
+    EXPECT_NEAR(Pout[kE021], z, 0.00001F);
+}
 
 INSTANTIATE_TEST_CASE_P(InstantiationName,
                         PGA3D3FloatsTest,

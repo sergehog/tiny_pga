@@ -28,6 +28,7 @@
 #ifndef TINY_PGA_PGA3D_H_
 #define TINY_PGA_PGA3D_H_
 
+#include "tiny_autodf.h"
 #include <stdio.h>
 #include <array>
 #include <cmath>
@@ -190,8 +191,8 @@ inline PGA3D<ScalarType> operator!(const PGA3D<ScalarType>& a)
 };
 
 /// The geometric product: res = a * b
-template <typename ScalarType = float>
-inline PGA3D<ScalarType> operator*(const PGA3D<ScalarType>& a, const PGA3D<ScalarType>& b)
+template <typename ScalarType = float, typename ScalarType2 = float>
+inline PGA3D<ScalarType> operator*(const PGA3D<ScalarType>& a, const PGA3D<ScalarType2>& b)
 {
     PGA3D<ScalarType> res{};
     res[0] = b[0] * a[0] + b[2] * a[2] + b[3] * a[3] + b[4] * a[4] - b[8] * a[8] - b[9] * a[9] - b[10] * a[10] -
@@ -238,8 +239,8 @@ inline PGA3D<ScalarType> operator*(const PGA3D<ScalarType>& a, const PGA3D<Scala
 };
 
 /// The outer  product. Also known as Wedge or MEET : res = a ^ b
-template <typename ScalarType = float>
-inline PGA3D<ScalarType> operator^(const PGA3D<ScalarType>& a, const PGA3D<ScalarType>& b)
+template <typename ScalarType = float, typename ScalarType2 = float>
+inline PGA3D<ScalarType> operator^(const PGA3D<ScalarType>& a, const PGA3D<ScalarType2>& b)
 {
     PGA3D<ScalarType> res;
     res[0] = b[0] * a[0];
@@ -268,8 +269,8 @@ inline PGA3D<ScalarType> operator^(const PGA3D<ScalarType>& a, const PGA3D<Scala
 };
 
 /// The regressive product. Also known as Vee or JOIN : res = a & b
-template <typename ScalarType = float>
-inline PGA3D<ScalarType> operator&(const PGA3D<ScalarType>& a, const PGA3D<ScalarType>& b)
+template <typename ScalarType = float, typename ScalarType2 = float>
+inline PGA3D<ScalarType> operator&(const PGA3D<ScalarType>& a, const PGA3D<ScalarType2>& b)
 {
     PGA3D<ScalarType> res;
     res[15] = (a[15] * b[15]);
@@ -298,8 +299,8 @@ inline PGA3D<ScalarType> operator&(const PGA3D<ScalarType>& a, const PGA3D<Scala
 };
 
 /// The inner product. (Dot) : res = a | b
-template <typename ScalarType = float>
-inline PGA3D<ScalarType> operator|(const PGA3D<ScalarType>& a, const PGA3D<ScalarType>& b)
+template <typename ScalarType = float, typename ScalarType2 = float>
+inline PGA3D<ScalarType> operator|(const PGA3D<ScalarType>& a, const PGA3D<ScalarType2>& b)
 {
     PGA3D<ScalarType> res;
     res[0] = b[0] * a[0] + b[2] * a[2] + b[3] * a[3] + b[4] * a[4] - b[8] * a[8] - b[9] * a[9] - b[10] * a[10] -
@@ -331,8 +332,8 @@ inline PGA3D<ScalarType> operator|(const PGA3D<ScalarType>& a, const PGA3D<Scala
 };
 
 /// Multivector addition : res = a + b
-template <typename ScalarType = float>
-inline PGA3D<ScalarType> operator+(const PGA3D<ScalarType>& a, const PGA3D<ScalarType>& b)
+template <typename ScalarType = float, typename ScalarType2 = float>
+inline PGA3D<ScalarType> operator+(const PGA3D<ScalarType>& a, const PGA3D<ScalarType2>& b)
 {
     PGA3D<ScalarType> res;
     res[0] = a[0] + b[0];
@@ -359,6 +360,54 @@ template <typename ScalarType = float>
 inline PGA3D<ScalarType> operator-(const PGA3D<ScalarType>& a, const PGA3D<ScalarType>& b)
 {
     PGA3D<ScalarType> res;
+    res[0] = a[0] - b[0];
+    res[1] = a[1] - b[1];
+    res[2] = a[2] - b[2];
+    res[3] = a[3] - b[3];
+    res[4] = a[4] - b[4];
+    res[5] = a[5] - b[5];
+    res[6] = a[6] - b[6];
+    res[7] = a[7] - b[7];
+    res[8] = a[8] - b[8];
+    res[9] = a[9] - b[9];
+    res[10] = a[10] - b[10];
+    res[11] = a[11] - b[11];
+    res[12] = a[12] - b[12];
+    res[13] = a[13] - b[13];
+    res[14] = a[14] - b[14];
+    res[15] = a[15] - b[15];
+    return res;
+};
+
+template <typename ScalarType = float>
+inline PGA3D<tiny_autodf::AutoDf<ScalarType>> operator-(const PGA3D<tiny_autodf::AutoDf<ScalarType>>& a,
+                                                        const PGA3D<ScalarType>& b)
+{
+    PGA3D<tiny_autodf::AutoDf<ScalarType>> res;
+    res[0] = a[0] - b[0];
+    res[1] = a[1] - b[1];
+    res[2] = a[2] - b[2];
+    res[3] = a[3] - b[3];
+    res[4] = a[4] - b[4];
+    res[5] = a[5] - b[5];
+    res[6] = a[6] - b[6];
+    res[7] = a[7] - b[7];
+    res[8] = a[8] - b[8];
+    res[9] = a[9] - b[9];
+    res[10] = a[10] - b[10];
+    res[11] = a[11] - b[11];
+    res[12] = a[12] - b[12];
+    res[13] = a[13] - b[13];
+    res[14] = a[14] - b[14];
+    res[15] = a[15] - b[15];
+    return res;
+};
+
+template <typename ScalarType = float>
+inline PGA3D<tiny_autodf::AutoDf<ScalarType>> operator-(const PGA3D<ScalarType>& a,
+                                                        const PGA3D<tiny_autodf::AutoDf<ScalarType>>& b)
+{
+    PGA3D<tiny_autodf::AutoDf<ScalarType>> res;
     res[0] = a[0] - b[0];
     res[1] = a[1] - b[1];
     res[2] = a[2] - b[2];
@@ -533,36 +582,34 @@ static PGA3D<ScalarType> rotor(const ScalarType angle, const PGA3D<ScalarType> l
 template <typename ScalarType = float>
 static PGA3D<ScalarType> translator(const ScalarType dist, const PGA3D<ScalarType> line)
 {
-    using APGA = PGA3D<ScalarType>;
-    return APGA(kScalar) + (dist / ScalarType(2.0)) * line;
+    using PGA = PGA3D<ScalarType>;
+    return PGA(kScalar) + (dist / ScalarType(2.0)) * line;
 }
 
 /// A plane is defined using its homogenous equation ax + by + cz + d = 0
 template <typename ScalarType = float>
 static PGA3D<ScalarType> plane(ScalarType a, ScalarType b, ScalarType c, ScalarType d)
 {
-    using APGA = PGA3D<ScalarType>;
+    using PGA = PGA3D<ScalarType>;
     /// PGA is plane based. Vectors are planes
-    return APGA(a, kE1) + APGA(b, kE2) + APGA(c, kE3) + APGA(d, kE0);
+    return PGA(a, kE1) + PGA(b, kE2) + PGA(c, kE3) + PGA(d, kE0);
 }
 
 /// A point is just a homogeneous point, euclidean coordinates plus the origin
 template <typename ScalarType = float>
 static PGA3D<ScalarType> point(const ScalarType& x, const ScalarType& y, const ScalarType& z)
 {
-    using APGA = PGA3D<ScalarType>;
-    return APGA(kE123) + APGA(x, kE032) + APGA(y, kE013) + APGA(z, kE021);
+    using PGA = PGA3D<ScalarType>;
+    return PGA(kE123) + PGA(x, kE032) + PGA(y, kE013) + PGA(z, kE021);
 }
 
-///// Translator
-// template <typename ScalarType = float>
-// static PGA3D<ScalarType> translator(const ScalarType dx, const ScalarType dy, const ScalarType dz)
-//{
-//    using APGA = PGA3D<ScalarType>;
-//    const PGA3D<ScalarType> line = (APGA(kE123) & point(dx, dy, dz)).normalized();
-//    ScalarType dist = std::sqrt(dx*dx + dy*dy + dz*dz);
-//    return translator(dist, line);
-//}
+/// Translator
+template <typename ScalarType = float>
+static PGA3D<ScalarType> translator(const ScalarType dx, const ScalarType dy, const ScalarType dz)
+{
+    using PGA = PGA3D<ScalarType>;
+    return 1.F - PGA(dx / 2.F, kE01) - PGA(dy / 2.F, kE02) - PGA(dz / 2.F, kE03);
+}
 
 // for our toy problem (generate points on the surface of a torus)
 // we start with a function that generates motors.
@@ -570,8 +617,8 @@ static PGA3D<ScalarType> point(const ScalarType& x, const ScalarType& y, const S
 template <typename ScalarType = float>
 static PGA3D<ScalarType> circle(ScalarType t, ScalarType radius, PGA3D<ScalarType> line)
 {
-    using APGA = PGA3D<ScalarType>;
-    return rotor(ScalarType(t * 2.0 * PI), line) * translator(radius, APGA(kE01));
+    using PGA = PGA3D<ScalarType>;
+    return rotor(ScalarType(t * 2.0 * PI), line) * translator(radius, PGA(kE01));
 }
 
 // a torus is now the product of two circles.
