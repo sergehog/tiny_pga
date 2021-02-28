@@ -20,7 +20,7 @@
 
 using namespace tiny_autodf;
 
-TEST(BasicAutodiffTest, OneDependentVariableTest)
+TEST(AutoDfTest, OneDependentVariableTest)
 {
     AutoDf<> x = 15.F;
     AutoDf<> y = x + 5.F;
@@ -74,7 +74,7 @@ TEST(BasicAutodiffTest, OneDependentVariableTest)
     EXPECT_EQ(w.value(), 36.f);
 }
 
-TEST(BasicAutodiffTest, SumTest)
+TEST(AutoDfTest, SumTest)
 {
     AutoDf<float> x = 7.F;
     AutoDf<float> y = (x + 3.F) + 5.F;
@@ -120,7 +120,7 @@ TEST(BasicAutodiffTest, SumTest)
     EXPECT_EQ(ze.derivatives[x.ID()], 2.F);
 }
 
-TEST(BasicAutodiffTest, SubtractTest)
+TEST(AutoDfTest, SubtractTest)
 {
     AutoDf<> x = 10.F;
     AutoDf<> y = 20.F - x - 5.F;
@@ -166,7 +166,7 @@ TEST(BasicAutodiffTest, SubtractTest)
     EXPECT_EQ(ze.derivatives[x.ID()], -1.F);
 }
 
-TEST(BasicAutodiffTest, MultiplicationTest)
+TEST(AutoDfTest, MultiplicationTest)
 {
     AutoDf<> x = 7.F;
     AutoDf<> y = (x - 1.f) * (x + 1.F) * 2.F;
@@ -203,7 +203,7 @@ TEST(BasicAutodiffTest, MultiplicationTest)
     EXPECT_EQ(ye.derivatives[x.ID()], 4 * x.value());
 }
 
-TEST(BasicAutodiffTest, DivisionTest)
+TEST(AutoDfTest, DivisionTest)
 {
     AutoDf<> x = 7.F;
     AutoDf<> y = (x - 1.f) / (x + 1.F) / 2.F;
@@ -240,7 +240,7 @@ TEST(BasicAutodiffTest, DivisionTest)
     EXPECT_NEAR(ye.derivatives[x.ID()], 0.0204082F, 0.00001F);
 }
 
-TEST(BasicAutodiffTest, AbsMinMaxTest)
+TEST(AutoDfTest, AbsMinMaxTest)
 {
     AutoDf<>::StartVariables();
     AutoDf<> x = 7.F;
@@ -248,20 +248,26 @@ TEST(BasicAutodiffTest, AbsMinMaxTest)
     AutoDf<>::StartConstants();
     AutoDf<> absx = abs(x);
     AutoDf<> absy = abs(y);
+    AutoDf<> minxy = min(x, y);
+    AutoDf<> maxxy = max(x, y);
 
-    ASSERT_EQ(absx.value(), 7.F);
-    ASSERT_EQ(absy.value(), 5.F);
+    EXPECT_EQ(absx.value(), 7.F);
+    EXPECT_EQ(absy.value(), 5.F);
+    EXPECT_EQ(min(x, y).value(), -5.F);
+    EXPECT_EQ(max(x, y).value(), 7.F);
 
-    ASSERT_EQ(min(x, y).value(), -5.F);
-    ASSERT_EQ(max(x, y).value(), 7.F);
+    ASSERT_EQ(absx.variables().size(), 1U);
+    ASSERT_EQ(absy.variables().size(), 1U);
+    ASSERT_EQ(minxy.variables().size(), 2U);
+    ASSERT_EQ(maxxy.variables().size(), 2U);
 
-    ASSERT_EQ(min(absx, absy).value(), 5.F);
-    ASSERT_EQ(max(-absx, -absy).value(), -5.F);
+    EXPECT_EQ(min(absx, absy).value(), 5.F);
+    EXPECT_EQ(max(-absx, -absy).value(), -5.F);
 
     auto ex = absx.eval();
     auto ey = absy.eval();
-    ASSERT_EQ(ex.value, absx.value());
-    ASSERT_EQ(ey.value, absy.value());
+    EXPECT_EQ(ex.value, absx.value());
+    EXPECT_EQ(ey.value, absy.value());
     ASSERT_EQ(ex.derivatives.size(), 1);
     ASSERT_EQ(ey.derivatives.size(), 1);
 
@@ -269,7 +275,7 @@ TEST(BasicAutodiffTest, AbsMinMaxTest)
     ASSERT_EQ(ey.derivatives.begin()->second, -1.F);
 }
 
-TEST(BasicAutodiffTest, AbsSinCosTest)
+TEST(AutoDfTest, SinCosTest)
 {
     AutoDf<>::StartVariables();
     AutoDf<> x = 7.F;
@@ -277,17 +283,53 @@ TEST(BasicAutodiffTest, AbsSinCosTest)
     AutoDf<> sinx = sin(x);
     AutoDf<> cosx = cos(x);
 
-    ASSERT_EQ(sinx.value(), std::sin(7.F));
-    ASSERT_EQ(cosx.value(), std::cos(7.F));
+    EXPECT_EQ(sinx.value(), std::sin(7.F));
+    EXPECT_EQ(cosx.value(), std::cos(7.F));
+    ASSERT_EQ(sinx.variables().size(), 1U);
+    ASSERT_EQ(cosx.variables().size(), 1U);
 
     auto e1 = sinx.eval();
     auto e2 = cosx.eval();
 
-    ASSERT_EQ(e1.value, sinx.value());
-    ASSERT_EQ(e2.value, cosx.value());
+    EXPECT_EQ(e1.value, sinx.value());
+    EXPECT_EQ(e2.value, cosx.value());
     ASSERT_EQ(e1.derivatives.size(), 1);
     ASSERT_EQ(e2.derivatives.size(), 1);
 
-    ASSERT_EQ(e1.derivatives.begin()->second, e2.value);
-    ASSERT_EQ(e2.derivatives.begin()->second, -e1.value);
+    EXPECT_EQ(e1.derivatives.begin()->second, e2.value);
+    EXPECT_EQ(e2.derivatives.begin()->second, -e1.value);
+}
+
+TEST(AutoDfTest, SimpleGradientDescentTest)
+{
+    AutoDf<>::StartVariables();
+    AutoDf<> x = 0.5F;
+    AutoDf<>::StartConstants();
+
+    AutoDf<> formula = -cos(x);
+    EXPECT_NEAR(formula.value(), -cos(x.value()), 1E-6F);
+    ASSERT_EQ(formula.variables().size(), 1U);
+
+    auto result = GradientDescent(formula, {NAN, 1e-8F});
+    ASSERT_EQ(result.derivatives.size(), 1U);
+
+    EXPECT_NEAR(result.value, -1.F, 1e-5);
+    EXPECT_NEAR(x.value(), 0.F, 1e-5);
+}
+
+TEST(AutoDfTest, GradientDescentTest)
+{
+    AutoDf<>::StartVariables();
+    AutoDf<> x = 0.5F;
+    AutoDf<>::StartConstants();
+
+    AutoDf<> formula = min(-cos(x) + 0.5F * abs(x + 2.F) + (x - 1.F) * (x - 1.F) * 0.1F, 5.F);
+
+    AutoDf<>::Evaluation result;
+    ASSERT_NO_THROW(result = GradientDescent(formula, {NAN, 1e-6F}));
+
+    ASSERT_EQ(result.derivatives.size(), 1U);
+
+    EXPECT_NEAR(result.value, 0.062334731, 1e-5);
+    EXPECT_NEAR(x.value(), -0.2522214055, 1e-5);
 }

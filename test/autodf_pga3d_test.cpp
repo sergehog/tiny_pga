@@ -97,10 +97,10 @@ TEST(AutoDfPGA3DTest, TryTranslatorOptimizationTest)
     EXPECT_EQ(err.value(), eval.value);
     EXPECT_EQ(eval.derivatives.size(), 8);
 
-    auto eval2 = GradientDescent(err, 1e-7F);
+    auto eval2 = GradientDescent(err, {1e-8F, NAN, NAN});
     std::cout << "final error"
               << ": " << eval2.value << std::endl;
-    EXPECT_NEAR(eval2.value, 0.F, 1e-7);
+    EXPECT_NEAR(eval2.value, 0.F, 1e-8);
 
     std::cout << "motor: [(" << w.value() << "," << a.value() << "," << b.value() << "," << c.value() << "),"
               << x.value() << "," << y.value() << "," << z.value() << "," << i.value() << "]" << std::endl;

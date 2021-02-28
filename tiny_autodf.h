@@ -21,10 +21,11 @@
 // Supports partial derivatives (i.e. functions of many variables)
 //
 
+#include <algorithm>
 #include <cmath>
 #include <iostream>
-#include <map>
 #include <memory>
+#include <unordered_map>
 
 #ifndef TINY_AUTODF_H_
 #define TINY_AUTODF_H_
@@ -39,7 +40,7 @@ class AutoDf
     struct Evaluation
     {
         ScalarType value;
-        std::map<size_t, ScalarType> derivatives;
+        std::unordered_map<size_t, ScalarType> derivatives;
     };
 
     enum class AutoType
@@ -68,7 +69,7 @@ class AutoDf
         std::shared_ptr<CallGraphNode> left{};
         std::shared_ptr<CallGraphNode> right{};
         std::shared_ptr<ScalarType> value{};
-        std::map<size_t, std::shared_ptr<ScalarType>> variables{};
+        std::unordered_map<size_t, std::shared_ptr<ScalarType>> variables{};
 
         CallGraphNode(const size_t id, const AutoType Type, const ScalarType& value_ = static_cast<ScalarType>(0.))
             : ID(id), type(Type)
@@ -377,7 +378,7 @@ class AutoDf
     }
 
     /// List of input "mutable" values, contributing to this AutoDf value
-    std::map<size_t, std::shared_ptr<ScalarType>>& variables() const { return node->variables; }
+    std::unordered_map<size_t, std::shared_ptr<ScalarType>>& variables() const { return node->variables; }
 
     Evaluation eval() const { return node->eval(); }
 
@@ -620,6 +621,7 @@ template <typename ScalarType>
 typename AutoDf<ScalarType>::AutoType volatile AutoDf<ScalarType>::default_type_ =
     AutoDf<ScalarType>::AutoType::kVariableType;
 
+/// MACRO to helps define operators of 2 arguments
 #define DEFINE_OPERATOR(OP, func)                                                                   \
     template <typename ScalarType>                                                                  \
     AutoDf<ScalarType> operator OP(const AutoDf<ScalarType>& other, const ScalarType scalar_value)  \
@@ -639,106 +641,43 @@ typename AutoDf<ScalarType>::AutoType volatile AutoDf<ScalarType>::default_type_
         return AutoDf<ScalarType>::func(left.node, right.node);                                     \
     }
 
+/// Definition of math operators
 DEFINE_OPERATOR(+, make_sum);
 DEFINE_OPERATOR(-, make_sub);
 DEFINE_OPERATOR(*, make_mult);
 DEFINE_OPERATOR(/, make_div);
 #undef DEFINE_OPERATOR
 
-#define INSTANTIATE_AUTODF_TEMPLATE(typename)                                            \
-    template <>                                                                          \
-    size_t AutoDf<typename>::id_increment = 0U;                                          \
-    template <>                                                                          \
-    const std::shared_ptr<AutoDf<typename>::CallGraphNode> AutoDf<typename>::zero_node = \
-        std::make_shared<AutoDf<typename>::CallGraphNode>(0, AutoType::kConstType, 0.F); \
-    AutoDf<float> ____instantiate_template_class;
-
-INSTANTIATE_AUTODF_TEMPLATE(float);
-
-template <typename ScalarType>
-typename AutoDf<ScalarType>::Evaluation GradientDescent(const AutoDf<ScalarType>& minimize_error,
-                                                        const ScalarType terminate_criteria = ScalarType(1e-6),
-                                                        const ScalarType initial_rate = ScalarType(0.01),
-                                                        const std::size_t max_iters = 100U)
-{
-    auto eval = minimize_error.eval();
-
-    if (std::isnan(eval.value) || eval.value < terminate_criteria)
-    {
-        return eval;
+/// MACRO to helps define functions of 2 arguments
+#define DEFINE_FUNCTION(func)                                                                \
+    template <typename ScalarType>                                                           \
+    AutoDf<ScalarType> func(const AutoDf<ScalarType>& other, const ScalarType scalar_value)  \
+    {                                                                                        \
+        AutoDf<ScalarType> scalar(scalar_value, true);                                       \
+        return AutoDf<ScalarType>::func(other, scalar);                                      \
+    }                                                                                        \
+    template <typename ScalarType>                                                           \
+    AutoDf<ScalarType> func(const ScalarType scalar_value, const AutoDf<ScalarType>& other)  \
+    {                                                                                        \
+        AutoDf<ScalarType> scalar(scalar_value, true);                                       \
+        return AutoDf<ScalarType>::func(scalar, other);                                      \
+    }                                                                                        \
+    template <typename ScalarType>                                                           \
+    AutoDf<ScalarType> func(const AutoDf<ScalarType>& left, const AutoDf<ScalarType>& right) \
+    {                                                                                        \
+        return AutoDf<ScalarType>::func(left, right);                                        \
     }
 
-    auto prev_derivatives = eval.derivatives;
-    std::map<size_t, float> prev_variables{};
-    for (auto x : minimize_error.variables())
-    {
-        prev_variables[x.first] = *x.second;
-    }
+/// Definition of some functions
+DEFINE_FUNCTION(min);
+DEFINE_FUNCTION(max);
+#undef DEFINE_FUNCTION
 
-    ScalarType prev_error = eval.value + 1.F;
-    ScalarType learning_rate = initial_rate;
-    size_t iter = 0U;
-
-    while (iter < max_iters && prev_error > terminate_criteria)
-    {
-        if (iter > 0)
-        {
-            float dot_value = 0.F;
-            float norm_value = 0.F;
-            for (auto x : minimize_error.variables())
-            {
-                const float x_curr = *minimize_error.variables().at(x.first);
-                const float x_prev = prev_variables[x.first];
-                const float dx_curr = eval.derivatives[x.first];
-                const float dx_prev = prev_derivatives[x.first];
-                dot_value += (x_curr - x_prev) * (dx_curr - dx_prev);
-                norm_value += (dx_curr - dx_prev) * (dx_curr - dx_prev);
-            }
-            learning_rate = std::abs(dot_value) / norm_value;
-        }
-
-        if (std::isnan(learning_rate) || learning_rate < terminate_criteria ||
-            std::abs(eval.value) < terminate_criteria)
-        {
-            return eval;
-        }
-
-        std::cout << iter << ": (rate=" << learning_rate << ") F[";
-
-        for (auto dx : eval.derivatives)
-        {
-            auto x = minimize_error.variables().at(dx.first);
-            prev_variables[dx.first] = *x;
-            prev_derivatives[dx.first] = dx.second;
-
-            std::cout << *x << ",";
-            *x -= dx.second * learning_rate;
-        }
-        std::cout << "] = " << eval.value << std::endl;
-        prev_error = eval.value;
-        eval = minimize_error.eval();
-
-        iter++;
-    }
-    return eval;
-}
-
+/// Functions of 1 argument do not require macros
 template <typename ScalarType>
 AutoDf<ScalarType> abs(const AutoDf<ScalarType>& other)
 {
     return AutoDf<ScalarType>::abs(other);
-}
-
-template <typename ScalarType>
-AutoDf<ScalarType> min(const AutoDf<ScalarType>& left, const AutoDf<ScalarType>& right)
-{
-    return AutoDf<ScalarType>::min(left, right);
-}
-
-template <typename ScalarType>
-AutoDf<ScalarType> max(const AutoDf<ScalarType>& left, const AutoDf<ScalarType>& right)
-{
-    return AutoDf<ScalarType>::max(left, right);
 }
 
 template <typename ScalarType>
@@ -753,17 +692,140 @@ AutoDf<ScalarType> cos(const AutoDf<ScalarType>& other)
     return AutoDf<ScalarType>::cos(other);
 }
 
+#define INSTANTIATE_AUTODF_TEMPLATE(typename)                                            \
+    template <>                                                                          \
+    size_t AutoDf<typename>::id_increment = 0U;                                          \
+    template <>                                                                          \
+    const std::shared_ptr<AutoDf<typename>::CallGraphNode> AutoDf<typename>::zero_node = \
+        std::make_shared<AutoDf<typename>::CallGraphNode>(0, AutoType::kConstType, 0.F); \
+    AutoDf<typename> ____instantiate_AutoDf_##typename;
+
+INSTANTIATE_AUTODF_TEMPLATE(float);
+
+/// In order to instantiate AutoDf<double> class one need either uncomment next line, or write one in their code
+// INSTANTIATE_AUTODF_TEMPLATE(double);
+
+template <typename ScalarType>
+struct TerminationCriteria
+{
+    ScalarType expression_less_than = NAN;
+    ScalarType step_less_than = 1e-6;
+    ScalarType diff_less_than = 1e-8;
+};
+
+/// Gradient Descent minimization algorithm
+template <typename ScalarType>
+typename AutoDf<ScalarType>::Evaluation GradientDescent(
+    const AutoDf<ScalarType>& minimize_expression,
+    const TerminationCriteria<ScalarType> termination_criteria = {NAN, 1e-6, 1e-8},
+    const ScalarType initial_step = ScalarType(0.01),
+    const std::size_t max_iterations = 100U)
+{
+    auto prev_error = minimize_expression.eval();
+    const bool termination_criteria_met = (!std::isnan(termination_criteria.expression_less_than)) &&
+                                          (prev_error.value < termination_criteria.expression_less_than);
+
+    if (std::isnan(prev_error.value) || termination_criteria_met)
+    {
+        return prev_error;
+    }
+
+    std::cout << "0: (initial) F[.]=" << prev_error.value << std::endl;
+
+    // store previous variable values
+    std::unordered_map<size_t, float> prev_values{};
+    for (auto value_pair : minimize_expression.variables())
+    {
+        prev_values[value_pair.first] = *value_pair.second;
+    }
+
+    ScalarType current_step = initial_step;
+
+    for (size_t iter = 1U; iter < max_iterations; iter++)
+    {
+        std::cout << iter << ": (rate=" << current_step << ") F[";
+
+        for (auto value_pair : minimize_expression.variables())
+        {
+            const ScalarType derivative = prev_error.derivatives[value_pair.first];
+            *value_pair.second = prev_values[value_pair.first] - derivative * current_step;
+            std::cout << *value_pair.second << ",";
+        }
+
+        auto current_error = minimize_expression.eval();
+        std::cout << "] = " << current_error.value << std::endl;
+
+        const bool expression_criteria_met = (!std::isnan(termination_criteria.expression_less_than)) &&
+                                             (current_error.value < termination_criteria.expression_less_than);
+
+        ScalarType error_diff = prev_error.value - current_error.value;
+        const bool diff_criteria_met =
+            (!std::isnan(termination_criteria.diff_less_than)) && (error_diff < termination_criteria.diff_less_than);
+
+        if (expression_criteria_met || diff_criteria_met)
+        {
+            return current_error;
+        }
+
+        // if error get worse -> "re-play" previous iteration with smaller step
+        if (current_error.value > prev_error.value)
+        {
+            // reduce step
+            current_step /= 2.;
+        }
+        else
+        {
+
+            float dot_value = 0.F, norm_value = 0.F;
+
+            for (auto value_pair : minimize_expression.variables())
+            {
+                const ScalarType x_prev = prev_values[value_pair.first];
+                const ScalarType dx_prev = prev_error.derivatives[value_pair.first];
+
+                ScalarType x_curr = *value_pair.second;
+                const ScalarType dx_curr = current_error.derivatives[value_pair.first];
+
+                dot_value += (x_curr - x_prev) * (dx_curr - dx_prev);
+                norm_value += (dx_curr - dx_prev) * (dx_curr - dx_prev);
+
+                // update previous values
+                prev_values[value_pair.first] = x_curr;
+            }
+
+            current_step = std::abs(dot_value) / norm_value;
+            prev_error = current_error;
+        }
+
+        const bool step_criteria_met =
+            (!std::isnan(termination_criteria.step_less_than)) && (current_step < termination_criteria.step_less_than);
+
+        if (step_criteria_met)
+        {
+            // if current_step is getting too small -> restore previous values and return previuous error
+            for (auto value_pair : minimize_expression.variables())
+            {
+                *value_pair.second = prev_values[value_pair.first];
+            }
+            return prev_error;
+        }
+    }
+
+    // return best known error
+    for (auto value_pair : minimize_expression.variables())
+    {
+        *value_pair.second = prev_values[value_pair.first];
+    }
+    return prev_error;
+}
+//
 // template <typename ScalarType, std::size_t Size>
 // typename AutoDf<ScalarType>::Evaluation LevenbergMarquardt(const std::array<AutoDf<ScalarType>, Size>& A_list,
 //                                                          const std::array<ScalarType, Size>& b = {})
 //{
 //    // list all available variables
-//    std::map<size_t, std::shared_ptr<ScalarType>> variables;
-//    for(size_t i =0; i<Size; i++)
-//    {
-//        auto vars = A_list[i].variables();
-//        variables.insert(vars.begin(), vars.end());
-//    }
+//    std::map<size_t, std::shared_ptr<ScalarType>> variables {};
+//    std::for_each(A_list.begin(), A_list.end(), [&](auto& a){variables.insert(a.variables().begin());});
 //
 //}
 
