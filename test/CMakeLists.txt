@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.15)
 
 set(CMAKE_CXX_STANDARD 14)
 
-find_package(GTest CONFIG REQUIRED)
-
 add_executable(elements_test elements_test.cpp )
 add_executable(pga_test pga_test.cpp)
 add_executable(auotdf_pga_test auotdf_pga_test.cpp)
