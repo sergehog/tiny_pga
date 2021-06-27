@@ -15,7 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../tiny_autodf.h"
+#include <tiny_autodf/tiny_autodf.h>
 #include "../tiny_pga.h"
 #include <gtest/gtest.h>
 
@@ -26,7 +26,7 @@ using Float = AutoDf<float>;
 
 TEST(AutoDfPGATest, SimpleTest)
 {
-    Float::StartConstants(false);
+    Float::StartVariables();
     Float x = 2.F;
     Float y = 3.F;
     Float z = 4.F;

@@ -1,7 +1,7 @@
 // MIT License
 //
 // Copyright (c) 2017 Steven De Keninck
-// Copyright (c) 2020 Sergey Smirnov
+// Copyright (c) 2020-2021 Sergey Smirnov
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@
 #ifndef TINY_PGA_PGA3D_H_
 #define TINY_PGA_PGA3D_H_
 
-#include "tiny_autodf.h"
+#include "tiny_autodf/tiny_autodf.h"
 #include <stdio.h>
 #include <array>
 #include <cmath>

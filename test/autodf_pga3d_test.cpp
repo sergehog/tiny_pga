@@ -16,7 +16,7 @@
  */
 
 #include "../pga3d.h"
-#include "../tiny_autodf.h"
+#include <tiny_autodf/tiny_autodf.h>
 #include <gtest/gtest.h>
 
 using namespace tiny_autodf;
@@ -27,7 +27,7 @@ using PGA = PGA3D<float>;
 
 TEST(AutoDfPGA3DTest, SimpleTest)
 {
-    Float::StartConstants(false);
+    Float::StartVariables();
     Float x = 2.F;
     Float y = 3.F;
     Float z = 4.F;
@@ -66,7 +66,7 @@ TEST(AutoDfPGA3DTest, TryTranslatorOptimizationTest)
     const APGA e03(kE03);
     const APGA I(kE0123);
 
-    Float::StartConstants(false);
+    Float::StartVariables();
     Float w = 0.1F;
     Float a = 0.1F;
     Float b = 0.1F;

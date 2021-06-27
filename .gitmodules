@@ -1,0 +1,3 @@
+[submodule "tiny_autodf"]
+	path = tiny_autodf
+	url = git@github.com:sergehog/tiny_autodf.git
