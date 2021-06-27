@@ -51,11 +51,11 @@ enum Basis : std::size_t
     kE02 = 6U,  // Y offset for line
     kE03 = 7U,  // Z offset for line
     kE12 = 8U,
-    kAX = kE12,  // bivector for X direction ?? WTF
+    kAX = kE12,  // bivector for X direction
     kE31 = 9U,
     kAY = kE31,  // bivector for Y direction
     kE23 = 10U,
-    kAZ = kE23,  // bivector for Z direction ?? WTF
+    kAZ = kE23,  // bivector for Z direction
     kE021 = 11U,
     kE013 = 12U,
     kE032 = 13U,
