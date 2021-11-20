@@ -16,8 +16,8 @@
  */
 
 #include "../pga3d.h"
-#include <tiny_autodf/tiny_autodf.h>
 #include <gtest/gtest.h>
+#include <tiny_autodf/tiny_autodf.h>
 
 using namespace tiny_autodf;
 using namespace tiny_pga;

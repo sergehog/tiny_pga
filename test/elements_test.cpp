@@ -47,15 +47,6 @@ TEST(BasicTest, MultiplicationElementsTest)
     // Multiplication of 2 motors still a motor
     const Elems OutMotorElems = elems::multiplication(elems::MotorElems, elems::MotorElems);
     EXPECT_EQ(OutMotorElems, elems::MotorElems);
-
-    // after sandwich with a rotor/translator/motor, PGA primitive must remain the same
-    Elems OutElems =
-        elems::multiplication(elems::multiplication(elems::RotorElems, elems::PointElems), elems::RotorElems);
-
-    EXPECT_TRUE(elems::has_e021(OutElems));
-    EXPECT_TRUE(elems::has_e013(OutElems));
-    EXPECT_TRUE(elems::has_e032(OutElems));
-    EXPECT_TRUE(elems::has_e123(OutElems));
 }
 
 /// Test class for checking all possible element combinations

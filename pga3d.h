@@ -28,10 +28,10 @@
 #ifndef TINY_PGA_PGA3D_H_
 #define TINY_PGA_PGA3D_H_
 
-#include "tiny_autodf/tiny_autodf.h"
-#include <stdio.h>
+#include <tiny_autodf/tiny_autodf.h>
 #include <array>
 #include <cmath>
+#include <cstdio>
 
 #define PI 3.14159265358979323846
 
@@ -75,8 +75,6 @@ class PGA3D
     PGA3D(ScalarType f, Basis idx = kScalar) : mvec{} { mvec[idx] = f; }
 
     PGA3D(Basis idx) : mvec{} { mvec[idx] = 1.F; }
-
-    // PGA3D(const PGA3D& other) : mvec{other.mvec} {}
 
     PGA3D(const std::array<ScalarType, 16>& mvec) : mvec{mvec} {}
 

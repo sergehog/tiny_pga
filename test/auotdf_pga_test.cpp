@@ -15,9 +15,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <tiny_autodf/tiny_autodf.h>
 #include "../tiny_pga.h"
 #include <gtest/gtest.h>
+#include <tiny_autodf/tiny_autodf.h>
 
 using namespace tiny_autodf;
 using namespace tiny_pga;
