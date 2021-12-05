@@ -26,12 +26,12 @@ using Float = AutoDf<float>;
 
 TEST(AutoDfPGATest, SimpleTest)
 {
-    Float::StartVariables();
+    Float::VariablesByDefault();
     Float x = 2.F;
     Float y = 3.F;
     Float z = 4.F;
     Float w = Float(1.F, true);
-    Float::StartConstants();
+    Float::ConstantsByDefault();
 
     Multivector<elems::PointElems, Float> X;
     X.e021() = x;
@@ -44,7 +44,7 @@ TEST(AutoDfPGATest, SimpleTest)
     EXPECT_EQ(X.e032().value(), 4.F);
     EXPECT_EQ(X.e123().value(), 1.F);
 
-    Multivector<elems::multiplication(elems::PointElems, elems::PointElems), Float> Xn = X * X;
+    Multivector<elems::geometric_product(elems::PointElems, elems::PointElems), Float> Xn = X * X;
 
     EXPECT_EQ(Xn.scalar().value(), -1.F);
     auto variables = Xn.scalar().variables();

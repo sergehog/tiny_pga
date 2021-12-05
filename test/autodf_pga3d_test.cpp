@@ -27,11 +27,11 @@ using PGA = PGA3D<float>;
 
 TEST(AutoDfPGA3DTest, SimpleTest)
 {
-    Float::StartVariables();
+    Float::VariablesByDefault();
     Float x = 2.F;
     Float y = 3.F;
     Float z = 4.F;
-    Float::StartConstants();
+    Float::ConstantsByDefault();
 
     const APGA e0(kE0);
     APGA aa = e0 * x;
@@ -49,7 +49,7 @@ TEST(AutoDfPGA3DTest, SimpleTest)
 
 TEST(AutoDfPGA3DTest, TryTranslatorOptimizationTest)
 {
-    Float::StartConstants();
+    Float::ConstantsByDefault();
     APGA A = point(Float(0.F), Float(0.F), Float(0.F));
     APGA B = point(Float(1.F), Float(0.F), Float(0.F));
     APGA C = point(Float(0.F), Float(1.F), Float(0.F));
@@ -66,7 +66,7 @@ TEST(AutoDfPGA3DTest, TryTranslatorOptimizationTest)
     const APGA e03(kE03);
     const APGA I(kE0123);
 
-    Float::StartVariables();
+    Float::VariablesByDefault();
     Float w = 0.1F;
     Float a = 0.1F;
     Float b = 0.1F;
@@ -76,7 +76,7 @@ TEST(AutoDfPGA3DTest, TryTranslatorOptimizationTest)
     Float z = 0.1F;
     Float i = 0.1F;
 
-    Float::StartConstants();
+    Float::ConstantsByDefault();
 
     APGA motor = w * APGA(kScalar) + a * e12 + b * e31 + c * e23 + x * e01 + y * e02 + z * e03 + i * I;
 

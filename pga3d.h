@@ -28,7 +28,7 @@
 #ifndef TINY_PGA_PGA3D_H_
 #define TINY_PGA_PGA3D_H_
 
-#include <tiny_autodf/tiny_autodf.h>
+#include "tiny_autodf/tiny_autodf.h"
 #include <array>
 #include <cmath>
 #include <cstdio>
@@ -164,6 +164,30 @@ inline PGA3D<ScalarType> operator~(const PGA3D<ScalarType>& a)
     return res;
 };
 
+///
+template <typename ScalarType = float>
+inline PGA3D<ScalarType> operator-(const PGA3D<ScalarType>& a)
+{
+    PGA3D<ScalarType> res;
+    res[0] = -a[0];
+    res[1] = -a[1];
+    res[2] = -a[2];
+    res[3] = -a[3];
+    res[4] = -a[4];
+    res[5] = -a[5];
+    res[6] = -a[6];
+    res[7] = -a[7];
+    res[8] = -a[8];
+    res[9] = -a[9];
+    res[10] = -a[10];
+    res[11] = -a[11];
+    res[12] = -a[12];
+    res[13] = -a[13];
+    res[14] = -a[14];
+    res[15] = -a[15];
+    return res;
+};
+
 /// Poincare duality operator: res = !a
 template <typename ScalarType = float>
 inline PGA3D<ScalarType> operator!(const PGA3D<ScalarType>& a)
@@ -189,10 +213,10 @@ inline PGA3D<ScalarType> operator!(const PGA3D<ScalarType>& a)
 };
 
 /// The geometric product: res = a * b
-template <typename ScalarType = float, typename ScalarType2 = float>
-inline PGA3D<ScalarType> operator*(const PGA3D<ScalarType>& a, const PGA3D<ScalarType2>& b)
+template <typename ScalarType = float>
+inline PGA3D<ScalarType> operator*(const PGA3D<ScalarType>& a, const PGA3D<ScalarType>& b)
 {
-    PGA3D<ScalarType> res{};
+    PGA3D<ScalarType> res;
     res[0] = b[0] * a[0] + b[2] * a[2] + b[3] * a[3] + b[4] * a[4] - b[8] * a[8] - b[9] * a[9] - b[10] * a[10] -
              b[14] * a[14];
     res[1] = b[1] * a[0] + b[0] * a[1] + b[2] * a[5] - b[5] * a[2] + b[3] * a[6] - b[6] * a[3] + b[4] * a[7] -
@@ -235,6 +259,123 @@ inline PGA3D<ScalarType> operator*(const PGA3D<ScalarType>& a, const PGA3D<Scala
               b[1] * a[14] + b[0] * a[15];
     return res;
 };
+
+template <typename ScalarType = float>
+inline PGA3D<tiny_autodf::AutoDf<ScalarType>> operator*(const PGA3D<tiny_autodf::AutoDf<ScalarType>>& a, const PGA3D<ScalarType>& b)
+{
+    PGA3D<tiny_autodf::AutoDf<ScalarType>> res;
+    res[0] = b[0] * a[0] + b[2] * a[2] + b[3] * a[3] + b[4] * a[4] - b[8] * a[8] - b[9] * a[9] - b[10] * a[10] -
+             b[14] * a[14];
+    res[1] = b[1] * a[0] + b[0] * a[1] + b[2] * a[5] - b[5] * a[2] + b[3] * a[6] - b[6] * a[3] + b[4] * a[7] -
+             b[7] * a[4] + b[8] * a[11] + b[11] * a[8] + b[9] * a[12] + b[12] * a[9] + b[10] * a[13] + b[13] * a[10] -
+             b[14] * a[15] + b[15] * a[14];
+    res[2] = b[2] * a[0] + b[0] * a[2] - b[8] * a[3] + b[9] * a[4] + b[3] * a[8] - b[4] * a[9] - b[14] * a[10] -
+             b[10] * a[14];
+    res[3] = b[3] * a[0] + b[8] * a[2] + b[0] * a[3] - b[10] * a[4] - b[2] * a[8] - b[14] * a[9] + b[4] * a[10] -
+             b[9] * a[14];
+    res[4] = b[4] * a[0] - b[9] * a[2] + b[10] * a[3] + b[0] * a[4] - b[14] * a[8] + b[2] * a[9] - b[3] * a[10] -
+             b[8] * a[14];
+    res[5] = b[5] * a[0] + b[2] * a[1] - b[1] * a[2] - b[11] * a[3] + b[12] * a[4] + b[0] * a[5] - b[8] * a[6] +
+             b[9] * a[7] + b[6] * a[8] - b[7] * a[9] - b[15] * a[10] - b[3] * a[11] + b[4] * a[12] + b[14] * a[13] -
+             b[13] * a[14] - b[10] * a[15];
+    res[6] = b[6] * a[0] + b[3] * a[1] + b[11] * a[2] - b[1] * a[3] - b[13] * a[4] + b[8] * a[5] + b[0] * a[6] -
+             b[10] * a[7] - b[5] * a[8] - b[15] * a[9] + b[7] * a[10] + b[2] * a[11] + b[14] * a[12] - b[4] * a[13] -
+             b[12] * a[14] - b[9] * a[15];
+    res[7] = b[7] * a[0] + b[4] * a[1] - b[12] * a[2] + b[13] * a[3] - b[1] * a[4] - b[9] * a[5] + b[10] * a[6] +
+             b[0] * a[7] - b[15] * a[8] + b[5] * a[9] - b[6] * a[10] + b[14] * a[11] - b[2] * a[12] + b[3] * a[13] -
+             b[11] * a[14] - b[8] * a[15];
+    res[8] = b[8] * a[0] + b[3] * a[2] - b[2] * a[3] + b[14] * a[4] + b[0] * a[8] + b[10] * a[9] - b[9] * a[10] +
+             b[4] * a[14];
+    res[9] = b[9] * a[0] - b[4] * a[2] + b[14] * a[3] + b[2] * a[4] - b[10] * a[8] + b[0] * a[9] + b[8] * a[10] +
+             b[3] * a[14];
+    res[10] = b[10] * a[0] + b[14] * a[2] + b[4] * a[3] - b[3] * a[4] + b[9] * a[8] - b[8] * a[9] + b[0] * a[10] +
+              b[2] * a[14];
+    res[11] = b[11] * a[0] - b[8] * a[1] + b[6] * a[2] - b[5] * a[3] + b[15] * a[4] - b[3] * a[5] + b[2] * a[6] -
+              b[14] * a[7] - b[1] * a[8] + b[13] * a[9] - b[12] * a[10] + b[0] * a[11] + b[10] * a[12] - b[9] * a[13] +
+              b[7] * a[14] - b[4] * a[15];
+    res[12] = b[12] * a[0] - b[9] * a[1] - b[7] * a[2] + b[15] * a[3] + b[5] * a[4] + b[4] * a[5] - b[14] * a[6] -
+              b[2] * a[7] - b[13] * a[8] - b[1] * a[9] + b[11] * a[10] - b[10] * a[11] + b[0] * a[12] + b[8] * a[13] +
+              b[6] * a[14] - b[3] * a[15];
+    res[13] = b[13] * a[0] - b[10] * a[1] + b[15] * a[2] + b[7] * a[3] - b[6] * a[4] - b[14] * a[5] - b[4] * a[6] +
+              b[3] * a[7] + b[12] * a[8] - b[11] * a[9] - b[1] * a[10] + b[9] * a[11] - b[8] * a[12] + b[0] * a[13] +
+              b[5] * a[14] - b[2] * a[15];
+    res[14] = b[14] * a[0] + b[10] * a[2] + b[9] * a[3] + b[8] * a[4] + b[4] * a[8] + b[3] * a[9] + b[2] * a[10] +
+              b[0] * a[14];
+    res[15] = b[15] * a[0] + b[14] * a[1] + b[13] * a[2] + b[12] * a[3] + b[11] * a[4] + b[10] * a[5] + b[9] * a[6] +
+              b[8] * a[7] + b[7] * a[8] + b[6] * a[9] + b[5] * a[10] - b[4] * a[11] - b[3] * a[12] - b[2] * a[13] -
+              b[1] * a[14] + b[0] * a[15];
+    return res;
+};
+
+
+/// The geometric product: res = a * b
+template <typename ScalarType = float>
+inline PGA3D<tiny_autodf::AutoDf<ScalarType>> operator*(const PGA3D<ScalarType>& a, const PGA3D<tiny_autodf::AutoDf<ScalarType>>& b)
+{
+    PGA3D<tiny_autodf::AutoDf<ScalarType>> res;
+    res[0] = b[0] * a[0] + b[2] * a[2] + b[3] * a[3] + b[4] * a[4] - b[8] * a[8] - b[9] * a[9] - b[10] * a[10] -
+             b[14] * a[14];
+    res[1] = b[1] * a[0] + b[0] * a[1] + b[2] * a[5] - b[5] * a[2] + b[3] * a[6] - b[6] * a[3] + b[4] * a[7] -
+             b[7] * a[4] + b[8] * a[11] + b[11] * a[8] + b[9] * a[12] + b[12] * a[9] + b[10] * a[13] + b[13] * a[10] -
+             b[14] * a[15] + b[15] * a[14];
+    res[2] = b[2] * a[0] + b[0] * a[2] - b[8] * a[3] + b[9] * a[4] + b[3] * a[8] - b[4] * a[9] - b[14] * a[10] -
+             b[10] * a[14];
+    res[3] = b[3] * a[0] + b[8] * a[2] + b[0] * a[3] - b[10] * a[4] - b[2] * a[8] - b[14] * a[9] + b[4] * a[10] -
+             b[9] * a[14];
+    res[4] = b[4] * a[0] - b[9] * a[2] + b[10] * a[3] + b[0] * a[4] - b[14] * a[8] + b[2] * a[9] - b[3] * a[10] -
+             b[8] * a[14];
+    res[5] = b[5] * a[0] + b[2] * a[1] - b[1] * a[2] - b[11] * a[3] + b[12] * a[4] + b[0] * a[5] - b[8] * a[6] +
+             b[9] * a[7] + b[6] * a[8] - b[7] * a[9] - b[15] * a[10] - b[3] * a[11] + b[4] * a[12] + b[14] * a[13] -
+             b[13] * a[14] - b[10] * a[15];
+    res[6] = b[6] * a[0] + b[3] * a[1] + b[11] * a[2] - b[1] * a[3] - b[13] * a[4] + b[8] * a[5] + b[0] * a[6] -
+             b[10] * a[7] - b[5] * a[8] - b[15] * a[9] + b[7] * a[10] + b[2] * a[11] + b[14] * a[12] - b[4] * a[13] -
+             b[12] * a[14] - b[9] * a[15];
+    res[7] = b[7] * a[0] + b[4] * a[1] - b[12] * a[2] + b[13] * a[3] - b[1] * a[4] - b[9] * a[5] + b[10] * a[6] +
+             b[0] * a[7] - b[15] * a[8] + b[5] * a[9] - b[6] * a[10] + b[14] * a[11] - b[2] * a[12] + b[3] * a[13] -
+             b[11] * a[14] - b[8] * a[15];
+    res[8] = b[8] * a[0] + b[3] * a[2] - b[2] * a[3] + b[14] * a[4] + b[0] * a[8] + b[10] * a[9] - b[9] * a[10] +
+             b[4] * a[14];
+    res[9] = b[9] * a[0] - b[4] * a[2] + b[14] * a[3] + b[2] * a[4] - b[10] * a[8] + b[0] * a[9] + b[8] * a[10] +
+             b[3] * a[14];
+    res[10] = b[10] * a[0] + b[14] * a[2] + b[4] * a[3] - b[3] * a[4] + b[9] * a[8] - b[8] * a[9] + b[0] * a[10] +
+              b[2] * a[14];
+    res[11] = b[11] * a[0] - b[8] * a[1] + b[6] * a[2] - b[5] * a[3] + b[15] * a[4] - b[3] * a[5] + b[2] * a[6] -
+              b[14] * a[7] - b[1] * a[8] + b[13] * a[9] - b[12] * a[10] + b[0] * a[11] + b[10] * a[12] - b[9] * a[13] +
+              b[7] * a[14] - b[4] * a[15];
+    res[12] = b[12] * a[0] - b[9] * a[1] - b[7] * a[2] + b[15] * a[3] + b[5] * a[4] + b[4] * a[5] - b[14] * a[6] -
+              b[2] * a[7] - b[13] * a[8] - b[1] * a[9] + b[11] * a[10] - b[10] * a[11] + b[0] * a[12] + b[8] * a[13] +
+              b[6] * a[14] - b[3] * a[15];
+    res[13] = b[13] * a[0] - b[10] * a[1] + b[15] * a[2] + b[7] * a[3] - b[6] * a[4] - b[14] * a[5] - b[4] * a[6] +
+              b[3] * a[7] + b[12] * a[8] - b[11] * a[9] - b[1] * a[10] + b[9] * a[11] - b[8] * a[12] + b[0] * a[13] +
+              b[5] * a[14] - b[2] * a[15];
+    res[14] = b[14] * a[0] + b[10] * a[2] + b[9] * a[3] + b[8] * a[4] + b[4] * a[8] + b[3] * a[9] + b[2] * a[10] +
+              b[0] * a[14];
+    res[15] = b[15] * a[0] + b[14] * a[1] + b[13] * a[2] + b[12] * a[3] + b[11] * a[4] + b[10] * a[5] + b[9] * a[6] +
+              b[8] * a[7] + b[7] * a[8] + b[6] * a[9] + b[5] * a[10] - b[4] * a[11] - b[3] * a[12] - b[2] * a[13] -
+              b[1] * a[14] + b[0] * a[15];
+    return res;
+};
+
+
+/// sandwich product
+template <typename ScalarType = float>
+inline PGA3D<ScalarType> operator>>(const PGA3D<ScalarType>& a, const PGA3D<ScalarType>& b)
+{
+    return a * b * ~a;
+}
+
+template <typename ScalarType = float>
+inline PGA3D<tiny_autodf::AutoDf<ScalarType>> operator>>(const PGA3D<tiny_autodf::AutoDf<ScalarType>>& a, const PGA3D<ScalarType>& b)
+{
+    return a * b * ~a;
+}
+
+template <typename ScalarType = float>
+inline PGA3D<tiny_autodf::AutoDf<ScalarType>> operator>>(const PGA3D<ScalarType>& a, const PGA3D<tiny_autodf::AutoDf<ScalarType>>& b)
+{
+    return a * b * ~a;
+}
+
 
 /// The outer  product. Also known as Wedge or MEET : res = a ^ b
 template <typename ScalarType = float, typename ScalarType2 = float>
@@ -711,6 +852,80 @@ PGA3D<ScalarType> Euler2RotorReference(const ScalarType yaw, const ScalarType pi
     return APGA(qw, tiny_pga::kScalar) + APGA(qx, tiny_pga::kE12) + APGA(qy, tiny_pga::kE31) + APGA(qz, tiny_pga::kE23);
 }
 
+template<typename ScalarType>
+PGA3D<ScalarType> ScalarBivector(const PGA3D<tiny_autodf::AutoDf<ScalarType>>& in)
+{
+    PGA3D<ScalarType> out;
+
+    out[kScalar] = in[kScalar].eval().value;
+    out[kE0] = in[kE0].eval().value;
+    out[kE1] = in[kE1].eval().value;
+    out[kE2] = in[kE2].eval().value;
+    out[kE3] = in[kE3].eval().value;
+    out[kE01] = in[kE01].eval().value;
+    out[kE02] = in[kE02].eval().value;
+    out[kE03] = in[kE03].eval().value;
+    out[kE12] = in[kE12].eval().value;
+    out[kE23] = in[kE23].eval().value;
+    out[kE31] = in[kE31].eval().value;
+    out[kE021] = in[kE021].eval().value;
+    out[kE013] = in[kE013].eval().value;
+    out[kE032] = in[kE032].eval().value;
+    out[kE123] = in[kE123].eval().value;
+    out[kE0123] = in[kE0123].eval().value;
+    return out;
+}
+
+//template<typename ScalarType>
+//void setValues(const PGA3D<ScalarType>& in, PGA3D<tiny_autodf::AutoDf<ScalarType>>& out)
+//{
+//    out[kScalar].value() = in[kScalar];
+//    out[kE0].value() = in[kE0];
+//    out[kE1].value() = in[kE1];
+//    out[kE2].value() = in[kE2];
+//    out[kE3].value() = in[kE3];
+//    out[kE01].value() = in[kE01];
+//    out[kE02].value() = in[kE02];
+//    out[kE03].value() = in[kE03];
+//    out[kE12].value() = in[kE12];
+//    out[kE23].value() = in[kE23];
+//    out[kE31].value() = in[kE31];
+//    out[kE021].value() = in[kE021];
+//    out[kE013].value() = in[kE013];
+//    out[kE032].value() = in[kE032];
+//    out[kE123].value() = in[kE123];
+//    out[kE0123].value() = in[kE0123];
+//}
+
+/// turns ordinary bivector into differentiable one
+template<typename ScalarType>
+PGA3D<tiny_autodf::AutoDf<ScalarType>> AutoDfBivector(const PGA3D<ScalarType>& ordinary)
+{
+    using Float = tiny_autodf::AutoDf<ScalarType>;
+    Float::VariablesByDefault();
+    Float poseSc{ordinary[tiny_pga::kScalar]};
+    Float pose01{ordinary[tiny_pga::kE01]};
+    Float pose02{ordinary[tiny_pga::kE02]};
+    Float pose03{ordinary[tiny_pga::kE03]};
+    Float pose12{ordinary[tiny_pga::kE12]};
+    Float pose23{ordinary[tiny_pga::kE23]};
+    Float pose31{ordinary[tiny_pga::kE31]};
+    Float pose0123{ordinary[tiny_pga::kE0123]};
+    Float::ConstantsByDefault();
+
+    PGA3D<tiny_autodf::AutoDf<ScalarType>> differentiable;
+    differentiable[tiny_pga::kScalar] = poseSc;
+    differentiable[tiny_pga::kE01] = pose01;
+    differentiable[tiny_pga::kE02] = pose02;
+    differentiable[tiny_pga::kE03] = pose03;
+    differentiable[tiny_pga::kE12] = pose12;
+    differentiable[tiny_pga::kE23] = pose23;
+    differentiable[tiny_pga::kE31] = pose31;
+    differentiable[tiny_pga::kE0123] = pose0123;
+    return differentiable;
+}
+
+
 namespace float_basis
 {
 const static PGA3D<float> e0(kE0), e1(kE1), e2(kE2), e3(kE3);
@@ -720,5 +935,7 @@ const static PGA3D<float> e021(kE021), e023(kE032), e013(kE013), e123(kE123);
 const static PGA3D<float> e0123(kE0123);
 };  // namespace float_basis
 }  // namespace tiny_pga
+
+
 
 #endif  // TINY_PGA_PGA3D_H_

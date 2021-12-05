@@ -20,32 +20,32 @@
 
 using namespace tiny_pga;
 
-/// Tests elems::multiplication() function
-TEST(BasicTest, MultiplicationElementsTest)
+/// Tests elems::geometric_product() function
+TEST(BasicTest, GeometricProductElementsTest)
 {
     const Elems ScalarElems = static_cast<Elems>(elems::BitValues::kScalar);
-    const Elems OutScalarElems = elems::multiplication(ScalarElems, ScalarElems);
+    const Elems OutScalarElems = elems::geometric_product(ScalarElems, ScalarElems);
     EXPECT_EQ(OutScalarElems, ScalarElems);
 
     const Elems ComplexElems =
         static_cast<Elems>(elems::BitValues::kScalar) | static_cast<Elems>(elems::BitValues::kE12);
-    const Elems OutComplexElems = elems::multiplication(ComplexElems, ComplexElems);
+    const Elems OutComplexElems = elems::geometric_product(ComplexElems, ComplexElems);
     EXPECT_EQ(OutComplexElems, ComplexElems);
 
     const Elems DualElems = static_cast<Elems>(elems::BitValues::kScalar) | static_cast<Elems>(elems::BitValues::kE0);
-    const Elems OutDualElems = elems::multiplication(DualElems, DualElems);
+    const Elems OutDualElems = elems::geometric_product(DualElems, DualElems);
     EXPECT_EQ(OutDualElems, DualElems);
 
     // Multiplication of 2 rotors still a rotor
-    const Elems OutRotorElems = elems::multiplication(elems::RotorElems, elems::RotorElems);
+    const Elems OutRotorElems = elems::geometric_product(elems::RotorElems, elems::RotorElems);
     EXPECT_EQ(OutRotorElems, elems::RotorElems);
 
     // Multiplication of 2 translators still a translators
-    const Elems OutTranslatorElems = elems::multiplication(elems::TranslatorElems, elems::TranslatorElems);
+    const Elems OutTranslatorElems = elems::geometric_product(elems::TranslatorElems, elems::TranslatorElems);
     EXPECT_EQ(OutTranslatorElems, elems::TranslatorElems);
 
     // Multiplication of 2 motors still a motor
-    const Elems OutMotorElems = elems::multiplication(elems::MotorElems, elems::MotorElems);
+    const Elems OutMotorElems = elems::geometric_product(elems::MotorElems, elems::MotorElems);
     EXPECT_EQ(OutMotorElems, elems::MotorElems);
 }
 
@@ -202,7 +202,7 @@ TEST_P(PgaElementsTest, ElementsSquaringTest)
                                        test_e123,
                                        test_e0123);
 
-    const Elems resulting_elems = elems::multiplication(elem, elem);
+    const Elems resulting_elems = elems::geometric_product(elem, elem);
 
     EXPECT_EQ(elems::has_scalar(resulting_elems), is_scalar_expected);
     EXPECT_EQ(elems::has_e0(resulting_elems), is_e0_expected);
@@ -220,6 +220,183 @@ TEST_P(PgaElementsTest, ElementsSquaringTest)
     EXPECT_EQ(elems::has_e032(resulting_elems), is_e032_expected);
     EXPECT_EQ(elems::has_e123(resulting_elems), is_e123_expected);
     EXPECT_EQ(elems::has_e0123(resulting_elems), is_e0123_expected);
+}
+
+/// Inversing elements two times must result in the same elemens as initial
+TEST_P(PgaElementsTest, InverseElementsTest)
+{
+    bool test_scalar{}, test_e0{}, test_e1{}, test_e2{}, test_e3{}, test_e01{}, test_e02{}, test_e03{}, test_e12{},
+        test_e31{}, test_e23{}, test_e021{}, test_e013{}, test_e032{}, test_e123{}, test_e0123{};
+    std::tie(test_scalar,
+             test_e0,
+             test_e1,
+             test_e2,
+             test_e3,
+             test_e01,
+             test_e02,
+             test_e03,
+             test_e12,
+             test_e31,
+             test_e23,
+             test_e021,
+             test_e013,
+             test_e032,
+             test_e123,
+             test_e0123) = GetParam();
+
+    const Elems elems = elems::elements(test_scalar,
+                                        test_e0,
+                                        test_e1,
+                                        test_e2,
+                                        test_e3,
+                                        test_e01,
+                                        test_e02,
+                                        test_e03,
+                                        test_e12,
+                                        test_e31,
+                                        test_e23,
+                                        test_e021,
+                                        test_e013,
+                                        test_e032,
+                                        test_e123,
+                                        test_e0123);
+
+    const Elems inverse_elems = elems::inverse(elems);
+
+    // "symmetric" multivector elements might be inverse of each other
+    // here we check that at least some of the inverses are not the same as original
+    if (elems != 0U && elems::count(elems) % 2)
+    {
+        EXPECT_NE(elems, inverse_elems);
+    }
+
+    const Elems double_inverse_elems = elems::inverse(inverse_elems);
+
+    // check if inverse of invers same as original
+    EXPECT_EQ(elems, double_inverse_elems);
+}
+
+/// elems::addition() test
+TEST_P(PgaElementsTest, ElemsAdditionTest)
+{
+    bool test_scalar{}, test_e0{}, test_e1{}, test_e2{}, test_e3{}, test_e01{}, test_e02{}, test_e03{}, test_e12{},
+        test_e31{}, test_e23{}, test_e021{}, test_e013{}, test_e032{}, test_e123{}, test_e0123{};
+    std::tie(test_scalar,
+             test_e0,
+             test_e1,
+             test_e2,
+             test_e3,
+             test_e01,
+             test_e02,
+             test_e03,
+             test_e12,
+             test_e31,
+             test_e23,
+             test_e021,
+             test_e013,
+             test_e032,
+             test_e123,
+             test_e0123) = GetParam();
+
+    const Elems elems = elems::elements(test_scalar,
+                                        test_e0,
+                                        test_e1,
+                                        test_e2,
+                                        test_e3,
+                                        test_e01,
+                                        test_e02,
+                                        test_e03,
+                                        test_e12,
+                                        test_e31,
+                                        test_e23,
+                                        test_e021,
+                                        test_e013,
+                                        test_e032,
+                                        test_e123,
+                                        test_e0123);
+
+    const Elems empty = 0U;
+
+    const Elems elems1 = elems::addition(elems, empty);
+    const Elems elems2 = elems::addition(empty, elems);
+
+    const Elems scalar = static_cast<Elems>(elems::BitValues::kScalar);
+    const Elems elems1s = elems::addition(elems, scalar);
+    const Elems elems2s = elems::addition(scalar, elems);
+
+    EXPECT_EQ(elems, elems1);
+    EXPECT_EQ(elems, elems2);
+    EXPECT_EQ(elems1s, elems2s);
+    EXPECT_TRUE(elems::has_scalar(elems1s));
+}
+
+/// Tests Inversing of multivectors
+TEST_P(PgaElementsTest, RealInverseAndReverseTest)
+{
+    bool test_scalar{}, test_e0{}, test_e1{}, test_e2{}, test_e3{}, test_e01{}, test_e02{}, test_e03{}, test_e12{},
+        test_e31{}, test_e23{}, test_e021{}, test_e013{}, test_e032{}, test_e123{}, test_e0123{};
+    std::tie(test_scalar,
+             test_e0,
+             test_e1,
+             test_e2,
+             test_e3,
+             test_e01,
+             test_e02,
+             test_e03,
+             test_e12,
+             test_e31,
+             test_e23,
+             test_e021,
+             test_e013,
+             test_e032,
+             test_e123,
+             test_e0123) = GetParam();
+
+    Multivector<static_cast<Elems>(0U)> empty {};
+    Multivector<static_cast<Elems>(elems::BitValues::kScalar)> scalar {1.};
+    Multivector<static_cast<Elems>(elems::BitValues::kE0)> e0 {1.};
+    Multivector<static_cast<Elems>(elems::BitValues::kE1)> e1 {1.};
+    Multivector<static_cast<Elems>(elems::BitValues::kE2)> e2 {1.};
+    Multivector<static_cast<Elems>(elems::BitValues::kE3)> e3 {1.};
+    Multivector<static_cast<Elems>(elems::BitValues::kE01)> e01 {1.};
+    Multivector<static_cast<Elems>(elems::BitValues::kE02)> e02 {1.};
+    Multivector<static_cast<Elems>(elems::BitValues::kE03)> e03 {1.};
+
+    auto scalar = (test_scalar) ? scalar : empty;
+
+
+
+
+//    const Elems elems = elems::elements(test_scalar,
+//                                        test_e0,
+//                                        test_e1,
+//                                        test_e2,
+//                                        test_e3,
+//                                        test_e01,
+//                                        test_e02,
+//                                        test_e03,
+//                                        test_e12,
+//                                        test_e31,
+//                                        test_e23,
+//                                        test_e021,
+//                                        test_e013,
+//                                        test_e032,
+//                                        test_e123,
+//                                        test_e0123);
+
+    const Elems inverse_elems = elems::inverse(elems);
+
+    // "symmetric" multivector elements might be inverse of each other
+    // here we check that at least some of the inverses are not the same as original
+    if (elems != 0U && elems::count(elems) % 2)
+    {
+        EXPECT_NE(elems, inverse_elems);
+    }
+
+    const Elems double_inverse_elems = elems::inverse(inverse_elems);
+
+    // check if inverse of invers same as original
+    EXPECT_EQ(elems, double_inverse_elems);
 }
 
 INSTANTIATE_TEST_CASE_P(InstantiationName,
