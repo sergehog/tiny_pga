@@ -19,20 +19,20 @@
 #include <gtest/gtest.h>
 
 using namespace tiny_pga;
+using namespace tiny_pga::elems;
 
 /// Tests elems::geometric_product() function
 TEST(BasicTest, GeometricProductElementsTest)
 {
-    const Elems ScalarElems = static_cast<Elems>(elems::BitValues::kScalar);
+    const Elems ScalarElems = static_cast<Elems>(elems::Values::kScalar);
     const Elems OutScalarElems = elems::geometric_product(ScalarElems, ScalarElems);
     EXPECT_EQ(OutScalarElems, ScalarElems);
 
-    const Elems ComplexElems =
-        static_cast<Elems>(elems::BitValues::kScalar) | static_cast<Elems>(elems::BitValues::kE12);
+    const Elems ComplexElems = static_cast<Elems>(elems::Values::kScalar) | static_cast<Elems>(elems::Values::kE12);
     const Elems OutComplexElems = elems::geometric_product(ComplexElems, ComplexElems);
     EXPECT_EQ(OutComplexElems, ComplexElems);
 
-    const Elems DualElems = static_cast<Elems>(elems::BitValues::kScalar) | static_cast<Elems>(elems::BitValues::kE0);
+    const Elems DualElems = static_cast<Elems>(elems::Values::kScalar) | static_cast<Elems>(elems::Values::kE0);
     const Elems OutDualElems = elems::geometric_product(DualElems, DualElems);
     EXPECT_EQ(OutDualElems, DualElems);
 
@@ -117,7 +117,7 @@ TEST_P(PgaElementsTest, BasicElementsTest)
 }
 
 /// Certain combinations has to square to other certain elements
-TEST_P(PgaElementsTest, ElementsSquaringTest)
+TEST_P(PgaElementsTest, GeometricPrtoductSquaringTest)
 {
     bool test_scalar{}, test_e0{}, test_e1{}, test_e2{}, test_e3{}, test_e01{}, test_e02{}, test_e03{}, test_e12{},
         test_e31{}, test_e23{}, test_e021{}, test_e013{}, test_e032{}, test_e123{}, test_e0123{};
@@ -222,8 +222,91 @@ TEST_P(PgaElementsTest, ElementsSquaringTest)
     EXPECT_EQ(elems::has_e0123(resulting_elems), is_e0123_expected);
 }
 
-/// Inversing elements two times must result in the same elemens as initial
-TEST_P(PgaElementsTest, InverseElementsTest)
+/// Certain combinations has to square to other certain elements
+TEST_P(PgaElementsTest, InnerProductSquaringTest)
+{
+    bool test_scalar{}, test_e0{}, test_e1{}, test_e2{}, test_e3{}, test_e01{}, test_e02{}, test_e03{}, test_e12{},
+        test_e31{}, test_e23{}, test_e021{}, test_e013{}, test_e032{}, test_e123{}, test_e0123{};
+    std::tie(test_scalar,
+             test_e0,
+             test_e1,
+             test_e2,
+             test_e3,
+             test_e01,
+             test_e02,
+             test_e03,
+             test_e12,
+             test_e31,
+             test_e23,
+             test_e021,
+             test_e013,
+             test_e032,
+             test_e123,
+             test_e0123) = GetParam();
+
+    const bool is_scalar_expected =
+        test_scalar || test_e1 || test_e2 || test_e3 || test_e12 || test_e31 || test_e23 || test_e123;
+    const bool is_e0_expected = (test_scalar && test_e0) || (test_e1 && test_e01) || (test_e2 && test_e02) ||
+                                (test_e3 && test_e03) || (test_e12 && test_e021) || (test_e31 && test_e013) ||
+                                (test_e23 && test_e032) || (test_e123 && test_e0123);
+    const bool is_e1_expected =
+        (test_scalar && test_e1) || (test_e2 && test_e12) || (test_e3 && test_e31) || (test_e23 && test_e123);
+    const bool is_e2_expected =
+        (test_scalar && test_e2) || (test_e1 && test_e12) || (test_e3 && test_e23) || (test_e31 && test_e123);
+    const bool is_e3_expected =
+        (test_scalar && test_e3) || (test_e1 && test_e31) || (test_e2 && test_e23) || (test_e12 && test_e123);
+    const bool is_e01_expected =
+        (test_scalar && test_e01) || (test_e2 && test_e021) || (test_e3 && test_e013) || (test_e23 && test_e0123);
+    const bool is_e02_expected =
+        (test_scalar && test_e02) || (test_e1 && test_e021) || (test_e3 && test_e032) || (test_e31 && test_e0123);
+    const bool is_e03_expected =
+        (test_scalar && test_e03) || (test_e1 && test_e013) || (test_e2 && test_e032) || (test_e12 && test_e0123);
+    const bool is_e12_expected = (test_scalar && test_e12) || (test_e3 && test_e123);
+    const bool is_e31_expected = (test_scalar && test_e31) || (test_e2 && test_e123);
+    const bool is_e23_expected = (test_scalar && test_e23) || (test_e1 && test_e123);
+    const bool is_e021_expected = (test_scalar && test_e021) || (test_e3 && test_e0123);
+    const bool is_e013_expected = (test_scalar && test_e013) || (test_e2 && test_e0123);
+    const bool is_e032_expected = (test_scalar && test_e032) || (test_e1 && test_e0123);
+    const bool is_e123_expected = (test_scalar && test_e123);
+    const bool is_e0123_expected = (test_scalar && test_e0123);
+
+    const Elems elem = elems::elements(test_scalar,
+                                       test_e0,
+                                       test_e1,
+                                       test_e2,
+                                       test_e3,
+                                       test_e01,
+                                       test_e02,
+                                       test_e03,
+                                       test_e12,
+                                       test_e31,
+                                       test_e23,
+                                       test_e021,
+                                       test_e013,
+                                       test_e032,
+                                       test_e123,
+                                       test_e0123);
+
+    const Elems resulting_elems = elems::inner_product(elem, elem);
+    EXPECT_EQ(elems::has_scalar(resulting_elems), is_scalar_expected);
+    EXPECT_EQ(elems::has_e0(resulting_elems), is_e0_expected);
+    EXPECT_EQ(elems::has_e1(resulting_elems), is_e1_expected);
+    EXPECT_EQ(elems::has_e2(resulting_elems), is_e2_expected);
+    EXPECT_EQ(elems::has_e3(resulting_elems), is_e3_expected);
+    EXPECT_EQ(elems::has_e01(resulting_elems), is_e01_expected);
+    EXPECT_EQ(elems::has_e02(resulting_elems), is_e02_expected);
+    EXPECT_EQ(elems::has_e03(resulting_elems), is_e03_expected);
+    EXPECT_EQ(elems::has_e12(resulting_elems), is_e12_expected);
+    EXPECT_EQ(elems::has_e31(resulting_elems), is_e31_expected);
+    EXPECT_EQ(elems::has_e23(resulting_elems), is_e23_expected);
+    EXPECT_EQ(elems::has_e021(resulting_elems), is_e021_expected);
+    EXPECT_EQ(elems::has_e013(resulting_elems), is_e013_expected);
+    EXPECT_EQ(elems::has_e032(resulting_elems), is_e032_expected);
+    EXPECT_EQ(elems::has_e123(resulting_elems), is_e123_expected);
+    EXPECT_EQ(elems::has_e0123(resulting_elems), is_e0123_expected);
+}
+/// Dualization of elements two times must result in the same elements as initial
+TEST_P(PgaElementsTest, DualElementsTest)
 {
     bool test_scalar{}, test_e0{}, test_e1{}, test_e2{}, test_e3{}, test_e01{}, test_e02{}, test_e03{}, test_e12{},
         test_e31{}, test_e23{}, test_e021{}, test_e013{}, test_e032{}, test_e123{}, test_e0123{};
@@ -261,19 +344,19 @@ TEST_P(PgaElementsTest, InverseElementsTest)
                                         test_e123,
                                         test_e0123);
 
-    const Elems inverse_elems = elems::inverse(elems);
+    const Elems inverse_elems = elems::dual(elems);
 
-    // "symmetric" multivector elements might be inverse of each other
+    // "symmetric" multivector elements might be Inverse of each other
     // here we check that at least some of the inverses are not the same as original
     if (elems != 0U && elems::count(elems) % 2)
     {
         EXPECT_NE(elems, inverse_elems);
     }
 
-    const Elems double_inverse_elems = elems::inverse(inverse_elems);
+    const Elems double_dual_elems = elems::dual(inverse_elems);
 
-    // check if inverse of invers same as original
-    EXPECT_EQ(elems, double_inverse_elems);
+    // check if dual of dual same as original
+    EXPECT_EQ(elems, double_dual_elems);
 }
 
 /// elems::addition() test
@@ -320,7 +403,7 @@ TEST_P(PgaElementsTest, ElemsAdditionTest)
     const Elems elems1 = elems::addition(elems, empty);
     const Elems elems2 = elems::addition(empty, elems);
 
-    const Elems scalar = static_cast<Elems>(elems::BitValues::kScalar);
+    const Elems scalar = static_cast<Elems>(elems::Values::kScalar);
     const Elems elems1s = elems::addition(elems, scalar);
     const Elems elems2s = elems::addition(scalar, elems);
 
@@ -329,77 +412,77 @@ TEST_P(PgaElementsTest, ElemsAdditionTest)
     EXPECT_EQ(elems1s, elems2s);
     EXPECT_TRUE(elems::has_scalar(elems1s));
 }
+//
+///// Tests Inversing of multivectors
+// TEST_P(PgaElementsTest, RealInverseAndReverseTest)
+//{
+//    bool test_scalar{}, test_e0{}, test_e1{}, test_e2{}, test_e3{}, test_e01{}, test_e02{}, test_e03{}, test_e12{},
+//        test_e31{}, test_e23{}, test_e021{}, test_e013{}, test_e032{}, test_e123{}, test_e0123{};
+//    std::tie(test_scalar,
+//             test_e0,
+//             test_e1,
+//             test_e2,
+//             test_e3,
+//             test_e01,
+//             test_e02,
+//             test_e03,
+//             test_e12,
+//             test_e31,
+//             test_e23,
+//             test_e021,
+//             test_e013,
+//             test_e032,
+//             test_e123,
+//             test_e0123) = GetParam();
+//
+//    Multivector<static_cast<Elems>(0U)> empty {};
+//    Multivector<static_cast<Elems>(elems::Values::kScalar)> scalar {1.};
+//    Multivector<static_cast<Elems>(elems::Values::kE0)> e0 {1.};
+//    Multivector<static_cast<Elems>(elems::Values::kE1)> e1 {1.};
+//    Multivector<static_cast<Elems>(elems::Values::kE2)> e2 {1.};
+//    Multivector<static_cast<Elems>(elems::Values::kE3)> e3 {1.};
+//    Multivector<static_cast<Elems>(elems::Values::kE01)> e01 {1.};
+//    Multivector<static_cast<Elems>(elems::Values::kE02)> e02 {1.};
+//    Multivector<static_cast<Elems>(elems::Values::kE03)> e03 {1.};
+//
+//    auto scalar = (test_scalar) ? scalar : empty;
+//
+//
+//
+//
+////    const Elems elems = elems::elements(test_scalar,
+////                                        test_e0,
+////                                        test_e1,
+////                                        test_e2,
+////                                        test_e3,
+////                                        test_e01,
+////                                        test_e02,
+////                                        test_e03,
+////                                        test_e12,
+////                                        test_e31,
+////                                        test_e23,
+////                                        test_e021,
+////                                        test_e013,
+////                                        test_e032,
+////                                        test_e123,
+////                                        test_e0123);
+//
+//    const Elems inverse_elems = elems::Inverse(elems);
+//
+//    // "symmetric" multivector elements might be Inverse of each other
+//    // here we check that at least some of the inverses are not the same as original
+//    if (elems != 0U && elems::count(elems) % 2)
+//    {
+//        EXPECT_NE(elems, inverse_elems);
+//    }
+//
+//    const Elems double_inverse_elems = elems::Inverse(inverse_elems);
+//
+//    // check if Inverse of invers same as original
+//    EXPECT_EQ(elems, double_inverse_elems);
+//}
 
-/// Tests Inversing of multivectors
-TEST_P(PgaElementsTest, RealInverseAndReverseTest)
-{
-    bool test_scalar{}, test_e0{}, test_e1{}, test_e2{}, test_e3{}, test_e01{}, test_e02{}, test_e03{}, test_e12{},
-        test_e31{}, test_e23{}, test_e021{}, test_e013{}, test_e032{}, test_e123{}, test_e0123{};
-    std::tie(test_scalar,
-             test_e0,
-             test_e1,
-             test_e2,
-             test_e3,
-             test_e01,
-             test_e02,
-             test_e03,
-             test_e12,
-             test_e31,
-             test_e23,
-             test_e021,
-             test_e013,
-             test_e032,
-             test_e123,
-             test_e0123) = GetParam();
-
-    Multivector<static_cast<Elems>(0U)> empty {};
-    Multivector<static_cast<Elems>(elems::BitValues::kScalar)> scalar {1.};
-    Multivector<static_cast<Elems>(elems::BitValues::kE0)> e0 {1.};
-    Multivector<static_cast<Elems>(elems::BitValues::kE1)> e1 {1.};
-    Multivector<static_cast<Elems>(elems::BitValues::kE2)> e2 {1.};
-    Multivector<static_cast<Elems>(elems::BitValues::kE3)> e3 {1.};
-    Multivector<static_cast<Elems>(elems::BitValues::kE01)> e01 {1.};
-    Multivector<static_cast<Elems>(elems::BitValues::kE02)> e02 {1.};
-    Multivector<static_cast<Elems>(elems::BitValues::kE03)> e03 {1.};
-
-    auto scalar = (test_scalar) ? scalar : empty;
-
-
-
-
-//    const Elems elems = elems::elements(test_scalar,
-//                                        test_e0,
-//                                        test_e1,
-//                                        test_e2,
-//                                        test_e3,
-//                                        test_e01,
-//                                        test_e02,
-//                                        test_e03,
-//                                        test_e12,
-//                                        test_e31,
-//                                        test_e23,
-//                                        test_e021,
-//                                        test_e013,
-//                                        test_e032,
-//                                        test_e123,
-//                                        test_e0123);
-
-    const Elems inverse_elems = elems::inverse(elems);
-
-    // "symmetric" multivector elements might be inverse of each other
-    // here we check that at least some of the inverses are not the same as original
-    if (elems != 0U && elems::count(elems) % 2)
-    {
-        EXPECT_NE(elems, inverse_elems);
-    }
-
-    const Elems double_inverse_elems = elems::inverse(inverse_elems);
-
-    // check if inverse of invers same as original
-    EXPECT_EQ(elems, double_inverse_elems);
-}
-
-INSTANTIATE_TEST_CASE_P(InstantiationName,
+INSTANTIATE_TEST_CASE_P(AllElements,
                         PgaElementsTest,
                         testing::Combine(testing::Bool(),
                                          testing::Bool(),

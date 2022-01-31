@@ -19,6 +19,7 @@
 #include <gtest/gtest.h>
 
 using namespace tiny_pga;
+using namespace tiny_pga::elems;
 
 class PgaTest : public ::testing::Test
 {
@@ -28,82 +29,136 @@ class PgaTest : public ::testing::Test
 
 TEST_F(PgaTest, BasicElemTest)
 {
-    constexpr Elems elem_1 = static_cast<Elems>(elems::BitValues::kScalar);
-    Multivector<elem_1> mv{};
+    constexpr Elems elem_1 = static_cast<Elems>(Values::kScalar);
+    EXPECT_TRUE(elems::has_scalar(elem_1));
 
-    EXPECT_TRUE(elems::has_scalar(static_cast<Elems>(elems::BitValues::kScalar)));
-    EXPECT_TRUE(elems::has_scalar(Multivector<elem_1>::Elements));
+    Multivector<elem_1> mv{11.F};
+    EXPECT_TRUE(elems::has_scalar(mv.Elements));
+    EXPECT_EQ(mv[Scalar], 11.F);
+    EXPECT_EQ(mv.value<Scalar>(), 11.F);
 
-    mv.scalar() = 15.f;
-    EXPECT_EQ(mv.scalar(), 15.F);
+    mv[Scalar] = 15.f;
+    EXPECT_EQ(mv[Scalar], 15.F);
+    EXPECT_EQ(mv.value<Scalar>(), 15.F);
 
-    Multivector<elem_1> mv1{};
-    Multivector<elem_1> mv2{};
-    Elems new_elem = elems::geometric_product(elem_1, elem_1);
-    EXPECT_EQ(new_elem, elem_1);
-    auto mv3 = mv1 * mv2;
-    EXPECT_NO_THROW(mv3.scalar());
-    mv3.scalar() = 1.F;
-    EXPECT_EQ(mv3.scalar(), 1.F);
-    mv3.scalar() = 2.F;
-    EXPECT_EQ(mv3.scalar(), 2.F);
+    auto mv2 = mv * mv;
+    EXPECT_EQ(mv2.Elements, mv.Elements);
+    EXPECT_TRUE(elems::has_scalar(mv2.Elements));
+    EXPECT_EQ(mv2[Scalar], 15.F*15.F);
+    EXPECT_EQ(mv2.value<Scalar>(), 15.F*15.F);
 
-    constexpr Elems elem_e0 = static_cast<Elems>(elems::BitValues::kE0);
+    // Plane is pure vector in PGA
+    PlaneF p{1, 2, 3, 4};
+    // squaring with dot-product
+    auto p_dot = p & p; // must be a scalar
+    EXPECT_EQ(p_dot.Elements, elem_1);
 
-    Multivector<elem_e0> mv4{};
-    Multivector<elem_e0> mv5 = mv1 * mv4;
-    Multivector<elem_e0> mv6 = mv4 * mv1;
-    Multivector<0> out0 = Multivector<elem_e0>{} * Multivector<elem_e0>{};
+    // squaring with geometric product
+    auto p_mul = p * p;
+    EXPECT_GT(p_mul.Elements, elem_1); // scalar + all vectors + all bi-vectors
 
-    constexpr Elems elem_e1 = static_cast<Elems>(elems::BitValues::kE1);
-    Multivector<elem_1> out = Multivector<elem_e1>{} * Multivector<elem_e1>{};
+    // squaring both ways must result in same scalar
+    EXPECT_EQ(p_mul[Scalar], p_dot[Scalar]);
+
+    auto p_0 = p_mul - p_dot;
+    EXPECT_EQ(p_mul.Elements, p_0.Elements);
+    EXPECT_EQ(p_0[Scalar],0.);
+
+    auto p_dual = !p_0;
+    EXPECT_NE(p_dual.Elements, p_0.Elements);
+    EXPECT_TRUE(elems::has_e0123(p_dual.Elements));
+    EXPECT_EQ(p_dual[E0123],0.);
+
+    auto p_all = p_0 + p_dual;
 }
 
-TEST(BasicTest, SquaringTest)
+/// Test class for checking all possible Multivector variants
+template<typename T>
+class AllMultivectorsTest
+    : public ::testing::Test
 {
-    tiny_pga::PointF point{1.f, 2.f, 3.f, 1.F};
+  public:
+    AllMultivectorsTest() = default;
+};
 
-    const auto a = point * point;
-    EXPECT_EQ(a.scalar(), -1);
+TYPED_TEST_SUITE_P(AllMultivectorsTest);
 
-    tiny_pga::PlaneF plane{1.f, 2.f, 3.f, 4.f};
-    const auto b = plane * plane;
-    EXPECT_EQ(b.scalar(), 2 * 2 + 3 * 3 + 4 * 4);
-}
-
-TEST(BasicTest, RotorTest)
+TYPED_TEST_P(AllMultivectorsTest, BasicTest)
 {
-    tiny_pga::RotorF rotor{1.F, 0.F, 0.F, 0.F};
-    tiny_pga::PointF point{ 1.f, 2.f, 3.f, 1.F};
+    // Inside a test, refer to TypeParam to get the type parameter.
+    TypeParam mv{};
+    for(std::size_t i=0UL; i<mv.values.size(); i++)
+    {
+        mv.values[i] = i;
+    }
 
-    const auto a = rotor * point * ~rotor;
+    auto mv2 = mv * mv;
+    auto mv3 = mv & mv;
 
-    EXPECT_NEAR(a.scalar(), 0.F, 1e-5);
-    EXPECT_NEAR(a.e0(), 0.F, 1e-5);
 
-    EXPECT_NEAR(a.e021(), point.e021(), 1e-5);
-    EXPECT_NEAR(a.e013(), point.e013(), 1e-5);
-    EXPECT_NEAR(a.e032(), point.e032(), 1e-5);
+    EXPECT_GE(mv2.Elements, mv3.Elements);
+    EXPECT_EQ(elems::has_scalar(mv2.Elements), elems::has_scalar(mv3.Elements));
+
+    if(elems::has_scalar(mv2.Elements))
+    {
+        EXPECT_EQ(mv2[Scalar], mv3[Scalar]);
+    }
 }
 
-TEST(BasicTest, ReverseTest)
-{
-    tiny_pga::RotorF rotor{11.F, 12.F, 13.F, 14.F};
-    tiny_pga::PointF point{1.f, 2.f, 3.f, 4.F};
+REGISTER_TYPED_TEST_SUITE_P(AllMultivectorsTest,
+                            BasicTest);
 
-    tiny_pga::RotorF r = ~rotor;
-    tiny_pga::PointF p = ~point;
+using MultivectorTypes = ::testing::Types<Multivector<Scalar>, PlaneF, ComplexF, LineF, PointF, RotorF, TranslatorF, MotorF>;
+INSTANTIATE_TYPED_TEST_SUITE_P(My, AllMultivectorsTest, MultivectorTypes);
 
-    EXPECT_NEAR(r.e021(), -rotor.e021(), 1e-5);
-    EXPECT_NEAR(r.e013(), -rotor.e013(), 1e-5);
-    EXPECT_NEAR(r.e032(), -rotor.e032(), 1e-5);
-    EXPECT_NEAR(r.e123(), -rotor.e123(), 1e-5);
 
-    EXPECT_NEAR(p.e021(), -point.e021(), 1e-5);
-    EXPECT_NEAR(p.e013(), -point.e013(), 1e-5);
-    EXPECT_NEAR(p.e032(), -point.e032(), 1e-5);
-    EXPECT_NEAR(p.e123(), -point.e123(), 1e-5);
-}
+
+//
+//TEST(BasicTest, SquaringTest)
+//{
+//    tiny_pga::PointF point{1.f, 2.f, 3.f, 1.F};
+//
+//    const auto a = point * point;
+//    EXPECT_EQ(a[Scalar], -1);
+//
+//    tiny_pga::PlaneF plane{1.f, 2.f, 3.f, 4.f};
+//    const auto b = plane * plane;
+//    EXPECT_EQ(b[Scalar], 2 * 2 + 3 * 3 + 4 * 4);
+//}
+//
+//TEST(BasicTest, RotorTest)
+//{
+//    tiny_pga::RotorF rotor{1.F, 0.F, 0.F, 0.F};
+//    tiny_pga::PointF point{ 1.f, 2.f, 3.f, 1.F};
+//
+//    const auto a = rotor * point * ~rotor;
+//
+//    EXPECT_NEAR(a.scalar(), 0.F, 1e-5);
+//    EXPECT_NEAR(a.e0(), 0.F, 1e-5);
+//
+//    EXPECT_NEAR(a.e021(), point.e021(), 1e-5);
+//    EXPECT_NEAR(a.e013(), point.e013(), 1e-5);
+//    EXPECT_NEAR(a.e032(), point.e032(), 1e-5);
+//}
+//
+//TEST(BasicTest, ReverseTest)
+//{
+//    tiny_pga::RotorF rotor{11.F, 12.F, 13.F, 14.F};
+//    tiny_pga::PointF point{1.f, 2.f, 3.f, 4.F};
+//
+//    tiny_pga::RotorF r = ~rotor;
+//    tiny_pga::PointF p = ~point;
+//
+//    EXPECT_NEAR(r.e021(), -rotor.e021(), 1e-5);
+//    EXPECT_NEAR(r.e013(), -rotor.e013(), 1e-5);
+//    EXPECT_NEAR(r.e032(), -rotor.e032(), 1e-5);
+//    EXPECT_NEAR(r.e123(), -rotor.e123(), 1e-5);
+//
+//    EXPECT_NEAR(p.e021(), -point.e021(), 1e-5);
+//    EXPECT_NEAR(p.e013(), -point.e013(), 1e-5);
+//    EXPECT_NEAR(p.e032(), -point.e032(), 1e-5);
+//    EXPECT_NEAR(p.e123(), -point.e123(), 1e-5);
+//}
 
 
 //TEST(BasicTest, SandwichRotorTest)
@@ -118,4 +173,5 @@ TEST(BasicTest, ReverseTest)
 //    EXPECT_NEAR(a.e032(), point.e032(), 1e-5);
 //    EXPECT_NEAR(a.e123(), point.e123(), 1e-5);
 //}
+
 
