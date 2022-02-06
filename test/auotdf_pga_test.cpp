@@ -21,6 +21,7 @@
 
 using namespace tiny_autodf;
 using namespace tiny_pga;
+using namespace tiny_pga::elems;
 
 using Float = AutoDf<float>;
 
@@ -34,20 +35,20 @@ TEST(AutoDfPGATest, SimpleTest)
     Float::ConstantsByDefault();
 
     Multivector<elems::PointElems, Float> X;
-    X.e021() = x;
-    X.e013() = y;
-    X.e032() = z;
-    X.e123() = w;
+    X[E021] = x;
+    X[E013] = y;
+    X[E032] = z;
+    X[E123] = w;
 
-    EXPECT_EQ(X.e021().value(), 2.F);
-    EXPECT_EQ(X.e013().value(), 3.F);
-    EXPECT_EQ(X.e032().value(), 4.F);
-    EXPECT_EQ(X.e123().value(), 1.F);
+    EXPECT_EQ(X[E021].value(), 2.F);
+    EXPECT_EQ(X[E013].value(), 3.F);
+    EXPECT_EQ(X[E032].value(), 4.F);
+    EXPECT_EQ(X[E123].value(), 1.F);
 
-    Multivector<elems::geometric_product(elems::PointElems, elems::PointElems), Float> Xn = X * X;
+    auto Xn = X * X;
 
-    EXPECT_EQ(Xn.scalar().value(), -1.F);
-    auto variables = Xn.scalar().variables();
+    EXPECT_EQ(Xn[Scalar].value(), -1.F);
+    auto variables = Xn[Scalar].variables();
     ASSERT_EQ(variables.size(), 0);
 
     Float formula = (x * y * z + w) / (y - z * x);

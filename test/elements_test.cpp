@@ -21,6 +21,29 @@
 using namespace tiny_pga;
 using namespace tiny_pga::elems;
 
+/// Converts tuple of 16 bools into Elems value
+Elems elements(
+    const std::tuple<bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool>
+        elems)
+{
+    return elems::elements(std::get<0>(elems),
+                           std::get<1>(elems),
+                           std::get<2>(elems),
+                           std::get<3>(elems),
+                           std::get<4>(elems),
+                           std::get<5>(elems),
+                           std::get<6>(elems),
+                           std::get<7>(elems),
+                           std::get<8>(elems),
+                           std::get<9>(elems),
+                           std::get<10>(elems),
+                           std::get<11>(elems),
+                           std::get<12>(elems),
+                           std::get<13>(elems),
+                           std::get<14>(elems),
+                           std::get<15>(elems));
+}
+
 /// Tests elems::geometric_product() function
 TEST(BasicTest, GeometricProductElementsTest)
 {
@@ -81,22 +104,7 @@ TEST_P(PgaElementsTest, BasicElementsTest)
              test_e123,
              test_e0123) = GetParam();
 
-    const Elems elem = elems::elements(test_scalar,
-                                       test_e0,
-                                       test_e1,
-                                       test_e2,
-                                       test_e3,
-                                       test_e01,
-                                       test_e02,
-                                       test_e03,
-                                       test_e12,
-                                       test_e31,
-                                       test_e23,
-                                       test_e021,
-                                       test_e013,
-                                       test_e032,
-                                       test_e123,
-                                       test_e0123);
+    const Elems elem = elements(GetParam());
 
     EXPECT_EQ(elems::has_scalar(elem), test_scalar);
     EXPECT_EQ(elems::has_e0(elem), test_e0);
@@ -117,7 +125,7 @@ TEST_P(PgaElementsTest, BasicElementsTest)
 }
 
 /// Certain combinations has to square to other certain elements
-TEST_P(PgaElementsTest, GeometricPrtoductSquaringTest)
+TEST_P(PgaElementsTest, GeometricProductSquaringTest)
 {
     bool test_scalar{}, test_e0{}, test_e1{}, test_e2{}, test_e3{}, test_e01{}, test_e02{}, test_e03{}, test_e12{},
         test_e31{}, test_e23{}, test_e021{}, test_e013{}, test_e032{}, test_e123{}, test_e0123{};
@@ -305,6 +313,133 @@ TEST_P(PgaElementsTest, InnerProductSquaringTest)
     EXPECT_EQ(elems::has_e123(resulting_elems), is_e123_expected);
     EXPECT_EQ(elems::has_e0123(resulting_elems), is_e0123_expected);
 }
+
+/// Certain combinations has to square to other certain elements
+TEST_P(PgaElementsTest, OuterProductSquaringTest)
+{
+    bool test_scalar{}, test_e0{}, test_e1{}, test_e2{}, test_e3{}, test_e01{}, test_e02{}, test_e03{}, test_e12{},
+        test_e31{}, test_e23{}, test_e021{}, test_e013{}, test_e032{}, test_e123{}, test_e0123{};
+    std::tie(test_scalar,
+             test_e0,
+             test_e1,
+             test_e2,
+             test_e3,
+             test_e01,
+             test_e02,
+             test_e03,
+             test_e12,
+             test_e31,
+             test_e23,
+             test_e021,
+             test_e013,
+             test_e032,
+             test_e123,
+             test_e0123) = GetParam();
+
+    const bool is_scalar_expected = test_scalar;
+    const bool is_e0_expected = (test_scalar && test_e0);
+    const bool is_e1_expected = (test_scalar && test_e1);
+    const bool is_e2_expected = (test_scalar && test_e2);
+    const bool is_e3_expected = (test_scalar && test_e3);
+    const bool is_e01_expected = (test_scalar && test_e01) || (test_e0 && test_e1);
+    const bool is_e02_expected = (test_scalar && test_e02) || (test_e0 && test_e2);
+    const bool is_e03_expected = (test_scalar && test_e03) || (test_e0 && test_e3);
+    const bool is_e12_expected = (test_scalar && test_e12) || (test_e1 && test_e2);
+    const bool is_e31_expected = (test_scalar && test_e31) || (test_e1 && test_e3);
+    const bool is_e23_expected = (test_scalar && test_e23) || (test_e2 && test_e3);
+    const bool is_e021_expected =
+        (test_scalar && test_e021) || (test_e0 && test_e12) || (test_e1 && test_e02) || (test_e2 && test_e01);
+    const bool is_e013_expected =
+        (test_scalar && test_e013) || (test_e0 && test_e31) || (test_e1 && test_e03) || (test_e3 && test_e01);
+    const bool is_e032_expected =
+        (test_scalar && test_e032) || (test_e0 && test_e23) || (test_e2 && test_e03) || (test_e3 && test_e02);
+    const bool is_e123_expected =
+        (test_scalar && test_e123) || (test_e1 && test_e23) || (test_e2 && test_e31) || (test_e3 && test_e12);
+    const bool is_e0123_expected = (test_scalar && test_e0123) || (test_e0 && test_e123) || (test_e1 && test_e032) ||
+                                   (test_e2 && test_e013) || (test_e3 && test_e021) || (test_e01 && test_e23) ||
+                                   (test_e02 && test_e31) || (test_e03 && test_e12);
+    const Elems elem = elems::elements(test_scalar,
+                                       test_e0,
+                                       test_e1,
+                                       test_e2,
+                                       test_e3,
+                                       test_e01,
+                                       test_e02,
+                                       test_e03,
+                                       test_e12,
+                                       test_e31,
+                                       test_e23,
+                                       test_e021,
+                                       test_e013,
+                                       test_e032,
+                                       test_e123,
+                                       test_e0123);
+
+    const Elems resulting_elems = elems::outer_product(elem, elem);
+    EXPECT_EQ(elems::has_scalar(resulting_elems), is_scalar_expected);
+    EXPECT_EQ(elems::has_e0(resulting_elems), is_e0_expected);
+    EXPECT_EQ(elems::has_e1(resulting_elems), is_e1_expected);
+    EXPECT_EQ(elems::has_e2(resulting_elems), is_e2_expected);
+    EXPECT_EQ(elems::has_e3(resulting_elems), is_e3_expected);
+    EXPECT_EQ(elems::has_e01(resulting_elems), is_e01_expected);
+    EXPECT_EQ(elems::has_e02(resulting_elems), is_e02_expected);
+    EXPECT_EQ(elems::has_e03(resulting_elems), is_e03_expected);
+    EXPECT_EQ(elems::has_e12(resulting_elems), is_e12_expected);
+    EXPECT_EQ(elems::has_e31(resulting_elems), is_e31_expected);
+    EXPECT_EQ(elems::has_e23(resulting_elems), is_e23_expected);
+    EXPECT_EQ(elems::has_e021(resulting_elems), is_e021_expected);
+    EXPECT_EQ(elems::has_e013(resulting_elems), is_e013_expected);
+    EXPECT_EQ(elems::has_e032(resulting_elems), is_e032_expected);
+    EXPECT_EQ(elems::has_e123(resulting_elems), is_e123_expected);
+    EXPECT_EQ(elems::has_e0123(resulting_elems), is_e0123_expected);
+}
+
+// TEST_P(PgaElementsTest, GeometricProductIsSumOfInnerAndOuterTest)
+//{
+//    bool test_scalar{}, test_e0{}, test_e1{}, test_e2{}, test_e3{}, test_e01{}, test_e02{}, test_e03{}, test_e12{},
+//        test_e31{}, test_e23{}, test_e021{}, test_e013{}, test_e032{}, test_e123{}, test_e0123{};
+//    std::tie(test_scalar,
+//             test_e0,
+//             test_e1,
+//             test_e2,
+//             test_e3,
+//             test_e01,
+//             test_e02,
+//             test_e03,
+//             test_e12,
+//             test_e31,
+//             test_e23,
+//             test_e021,
+//             test_e013,
+//             test_e032,
+//             test_e123,
+//             test_e0123) = GetParam();
+//
+//    const Elems elem = elems::elements(test_scalar,
+//                                       test_e0,
+//                                       test_e1,
+//                                       test_e2,
+//                                       test_e3,
+//                                       test_e01,
+//                                       test_e02,
+//                                       test_e03,
+//                                       test_e12,
+//                                       test_e31,
+//                                       test_e23,
+//                                       test_e021,
+//                                       test_e013,
+//                                       test_e032,
+//                                       test_e123,
+//                                       test_e0123);
+//
+//    const Elems gp_elems = elems::geometric_product(elem, elem);
+//    const Elems ip_elems = elems::inner_product(elem, elem);
+//    const Elems op_elems = elems::outer_product(elem, elem);
+//    const Elems test_elems = ip_elems | op_elems;
+//
+//    EXPECT_EQ(gp_elems, test_elems);
+//}
+
 /// Dualization of elements two times must result in the same elements as initial
 TEST_P(PgaElementsTest, DualElementsTest)
 {
@@ -344,22 +479,20 @@ TEST_P(PgaElementsTest, DualElementsTest)
                                         test_e123,
                                         test_e0123);
 
-    const Elems inverse_elems = elems::dual(elems);
+    const Elems dual_elems = elems::dual(elems);
 
-    // "symmetric" multivector elements might be Inverse of each other
-    // here we check that at least some of the inverses are not the same as original
+    // some "symmetric" element combinations might be dual of each other
+    // here we check that at least some duals are not the same as original
     if (elems != 0U && elems::count(elems) % 2)
     {
-        EXPECT_NE(elems, inverse_elems);
+        EXPECT_NE(elems, dual_elems);
     }
 
-    const Elems double_dual_elems = elems::dual(inverse_elems);
-
-    // check if dual of dual same as original
+    // however, double dual must be the same, as original
+    const Elems double_dual_elems = elems::dual(dual_elems);
     EXPECT_EQ(elems, double_dual_elems);
 }
 
-/// elems::addition() test
 TEST_P(PgaElementsTest, ElemsAdditionTest)
 {
     bool test_scalar{}, test_e0{}, test_e1{}, test_e2{}, test_e3{}, test_e01{}, test_e02{}, test_e03{}, test_e12{},
@@ -412,75 +545,6 @@ TEST_P(PgaElementsTest, ElemsAdditionTest)
     EXPECT_EQ(elems1s, elems2s);
     EXPECT_TRUE(elems::has_scalar(elems1s));
 }
-//
-///// Tests Inversing of multivectors
-// TEST_P(PgaElementsTest, RealInverseAndReverseTest)
-//{
-//    bool test_scalar{}, test_e0{}, test_e1{}, test_e2{}, test_e3{}, test_e01{}, test_e02{}, test_e03{}, test_e12{},
-//        test_e31{}, test_e23{}, test_e021{}, test_e013{}, test_e032{}, test_e123{}, test_e0123{};
-//    std::tie(test_scalar,
-//             test_e0,
-//             test_e1,
-//             test_e2,
-//             test_e3,
-//             test_e01,
-//             test_e02,
-//             test_e03,
-//             test_e12,
-//             test_e31,
-//             test_e23,
-//             test_e021,
-//             test_e013,
-//             test_e032,
-//             test_e123,
-//             test_e0123) = GetParam();
-//
-//    Multivector<static_cast<Elems>(0U)> empty {};
-//    Multivector<static_cast<Elems>(elems::Values::kScalar)> scalar {1.};
-//    Multivector<static_cast<Elems>(elems::Values::kE0)> e0 {1.};
-//    Multivector<static_cast<Elems>(elems::Values::kE1)> e1 {1.};
-//    Multivector<static_cast<Elems>(elems::Values::kE2)> e2 {1.};
-//    Multivector<static_cast<Elems>(elems::Values::kE3)> e3 {1.};
-//    Multivector<static_cast<Elems>(elems::Values::kE01)> e01 {1.};
-//    Multivector<static_cast<Elems>(elems::Values::kE02)> e02 {1.};
-//    Multivector<static_cast<Elems>(elems::Values::kE03)> e03 {1.};
-//
-//    auto scalar = (test_scalar) ? scalar : empty;
-//
-//
-//
-//
-////    const Elems elems = elems::elements(test_scalar,
-////                                        test_e0,
-////                                        test_e1,
-////                                        test_e2,
-////                                        test_e3,
-////                                        test_e01,
-////                                        test_e02,
-////                                        test_e03,
-////                                        test_e12,
-////                                        test_e31,
-////                                        test_e23,
-////                                        test_e021,
-////                                        test_e013,
-////                                        test_e032,
-////                                        test_e123,
-////                                        test_e0123);
-//
-//    const Elems inverse_elems = elems::Inverse(elems);
-//
-//    // "symmetric" multivector elements might be Inverse of each other
-//    // here we check that at least some of the inverses are not the same as original
-//    if (elems != 0U && elems::count(elems) % 2)
-//    {
-//        EXPECT_NE(elems, inverse_elems);
-//    }
-//
-//    const Elems double_inverse_elems = elems::Inverse(inverse_elems);
-//
-//    // check if Inverse of invers same as original
-//    EXPECT_EQ(elems, double_inverse_elems);
-//}
 
 INSTANTIATE_TEST_CASE_P(AllElements,
                         PgaElementsTest,

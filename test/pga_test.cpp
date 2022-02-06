@@ -50,7 +50,7 @@ TEST_F(PgaTest, BasicElemTest)
     // Plane is pure vector in PGA
     PlaneF p{1, 2, 3, 4};
     // squaring with dot-product
-    auto p_dot = p & p; // must be a scalar
+    auto p_dot = p | p; // must be a scalar
     EXPECT_EQ(p_dot.Elements, elem_1);
 
     // squaring with geometric product
@@ -92,16 +92,19 @@ TYPED_TEST_P(AllMultivectorsTest, BasicTest)
         mv.values[i] = i;
     }
 
-    auto mv2 = mv * mv;
-    auto mv3 = mv & mv;
+    auto gp = mv * mv; // geometric product
+    auto ip = mv | mv; // inner product
+    //auto op = mv ^ mv; // wedge product
 
+    //auto gp2 = ip + op;
 
-    EXPECT_GE(mv2.Elements, mv3.Elements);
-    EXPECT_EQ(elems::has_scalar(mv2.Elements), elems::has_scalar(mv3.Elements));
+    EXPECT_GE(gp.Elements, ip.Elements);
+    //EXPECT_EQ(gp.Elements, gp2.Elements);
+    EXPECT_EQ(elems::has_scalar(gp.Elements), elems::has_scalar(ip.Elements));
 
-    if(elems::has_scalar(mv2.Elements))
+    if(elems::has_scalar(gp.Elements))
     {
-        EXPECT_EQ(mv2[Scalar], mv3[Scalar]);
+        EXPECT_EQ(gp[Scalar], ip[Scalar]);
     }
 }
 
@@ -112,34 +115,20 @@ using MultivectorTypes = ::testing::Types<Multivector<Scalar>, PlaneF, ComplexF,
 INSTANTIATE_TYPED_TEST_SUITE_P(My, AllMultivectorsTest, MultivectorTypes);
 
 
+TEST(BasicTest, RotorTest)
+{
+    tiny_pga::RotorF rotor{1.F, 0.F, 0.F, 0.F};
+    tiny_pga::PointF point{ 1.f, 2.f, 3.f, 1.F};
 
-//
-//TEST(BasicTest, SquaringTest)
-//{
-//    tiny_pga::PointF point{1.f, 2.f, 3.f, 1.F};
-//
-//    const auto a = point * point;
-//    EXPECT_EQ(a[Scalar], -1);
-//
-//    tiny_pga::PlaneF plane{1.f, 2.f, 3.f, 4.f};
-//    const auto b = plane * plane;
-//    EXPECT_EQ(b[Scalar], 2 * 2 + 3 * 3 + 4 * 4);
-//}
-//
-//TEST(BasicTest, RotorTest)
-//{
-//    tiny_pga::RotorF rotor{1.F, 0.F, 0.F, 0.F};
-//    tiny_pga::PointF point{ 1.f, 2.f, 3.f, 1.F};
-//
-//    const auto a = rotor * point * ~rotor;
-//
-//    EXPECT_NEAR(a.scalar(), 0.F, 1e-5);
-//    EXPECT_NEAR(a.e0(), 0.F, 1e-5);
-//
-//    EXPECT_NEAR(a.e021(), point.e021(), 1e-5);
-//    EXPECT_NEAR(a.e013(), point.e013(), 1e-5);
-//    EXPECT_NEAR(a.e032(), point.e032(), 1e-5);
-//}
+    // Rotor is identity, so point2 values must be the same as in point
+    const auto point2 = rotor * point * ~rotor;
+
+    EXPECT_NEAR(point2[E021], point[E021], 1e-5);
+    EXPECT_NEAR(point2[E013], point[E013], 1e-5);
+    EXPECT_NEAR(point2[E032], point[E032], 1e-5);
+    EXPECT_NEAR(point2[E123], point[E123], 1e-5);
+}
+
 //
 //TEST(BasicTest, ReverseTest)
 //{

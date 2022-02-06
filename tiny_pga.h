@@ -111,7 +111,7 @@ struct Multivector
     template <elems::Names elem>
     ScalarType& value()
     {
-        static_assert((1U << uint16_t(elem)) & elements, "Multivector has no such element");
+        static_assert(elems::has_elem<elem>(elements), "Multivector has no such element");
         return values[elems::index<elem>(elements)];
     }
 
@@ -119,7 +119,7 @@ struct Multivector
     template <elems::Names elem>
     ScalarType value() const
     {
-        static_assert((1U << uint16_t(elem)) & elements, "Multivector has no such element");
+        static_assert(elems::has_elem<elem>(elements), "Multivector has no such element");
         return values.at(elems::index<elem>(elements));
     }
 
@@ -159,15 +159,15 @@ struct Multivector
         return geometric_product(*this, other);
     }
 
-    /// Inner product operator (also known as dot-product)
+    /// Inner product operator (also known as Dot-product)
     template <elems::Elems other_elements>
-    Multivector<elems::inner_product(elements, other_elements), ScalarType> operator&(
+    Multivector<elems::inner_product(elements, other_elements), ScalarType> operator|(
         const Multivector<other_elements, ScalarType>& other) const
     {
         return inner_product(*this, other);
     }
 
-    /// Outer product operator (also known as Vee or Wedge product)
+    /// Outer product operator (also known as Vee- or Wedge- product)
     template <elems::Elems other_elements>
     Multivector<elems::outer_product(elements, other_elements), ScalarType> operator^(
         const Multivector<other_elements, ScalarType>& other) const
@@ -175,9 +175,9 @@ struct Multivector
         return outer_product(*this, other);
     }
 
-    /// Regressive product operator
+    /// Regressive product operator (also known as Join-product)
     template <elems::Elems other_elements>
-    Multivector<elems::regressive_product(elements, other_elements), ScalarType> operator|(
+    Multivector<elems::regressive_product(elements, other_elements), ScalarType> operator&(
         const Multivector<other_elements, ScalarType>& other) const
     {
         return regressive_product(*this, other);
@@ -200,16 +200,16 @@ struct Multivector
     }
 
     /// Reverse operator
-    Multivector<elements, ScalarType> operator~() const { return reverse(*this); }
+    Multivector<elements, ScalarType> operator~() const { return tiny_pga::reverse(*this); }
 
     /// Reverse function
-    Multivector<elements, ScalarType> reverse() const { return reverse(*this); }
+    Multivector<elements, ScalarType> reverse() const { return tiny_pga::reverse(*this); }
 
     /// Duality operator
-    Multivector<elems::dual(elements), ScalarType> operator!() const { return dual(*this); }
+    Multivector<elems::dual(elements), ScalarType> operator!() const { return tiny_pga::dual(*this); }
 
     /// Duality function
-    //Multivector<elems::dual(elements), ScalarType> dual() const { return dual(*this); }
+    Multivector<elems::dual(elements), ScalarType> dual() const { return tiny_pga::dual(*this); }
 };
 
 template <elems::Elems first_elements, elems::Elems second_elements, typename ScalarType>
@@ -727,6 +727,7 @@ Multivector<elements, ScalarType> reverse(const Multivector<elements, ScalarType
     {
         out.template value<E0123>() = other.template value<E0123>();
     }
+    return out;
 }
 
 template <elems::Elems elements, typename ScalarType>

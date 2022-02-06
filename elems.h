@@ -18,8 +18,8 @@
 #ifndef TINY_PGA_ELEMS_H
 #define TINY_PGA_ELEMS_H
 
-#include <cstdint>
 #include <array>
+#include <cstdint>
 
 namespace tiny_pga
 {
@@ -113,30 +113,28 @@ constexpr std::size_t index(const Elems elems)
 
 constexpr std::array<std::size_t, elems::Names::Amount> indexes(const elems::Elems elements)
 {
-    std::array<std::size_t, elems::Names::Amount> indexes{
-        index<E1>(elements),
-        index<E2>(elements),
-        index<E3>(elements),
-        index<E0>(elements),
+    using Indexes = std::array<std::size_t, elems::Names::Amount>;
+    Indexes indexes{index<E1>(elements),
+                    index<E2>(elements),
+                    index<E3>(elements),
+                    index<E0>(elements),
 
-        index<Scalar>(elements),
-        index<E12>(elements),
-        index<E31>(elements),
-        index<E23>(elements),
+                    index<Scalar>(elements),
+                    index<E12>(elements),
+                    index<E31>(elements),
+                    index<E23>(elements),
 
-        index<E01>(elements),
-        index<E02>(elements),
-        index<E03>(elements),
-        index<E0123>(elements),
+                    index<E01>(elements),
+                    index<E02>(elements),
+                    index<E03>(elements),
+                    index<E0123>(elements),
 
-        index<E021>(elements),
-        index<E013>(elements),
-        index<E032>(elements),
-        index<E123>(elements)
-    };
+                    index<E021>(elements),
+                    index<E013>(elements),
+                    index<E032>(elements),
+                    index<E123>(elements)};
     return indexes;
 }
-
 
 /// Number of set elements (multivector array size)
 constexpr std::size_t count(Elems elems)
@@ -326,8 +324,7 @@ constexpr Elems geometric_product(const Elems elems1, const Elems elems2)
 
 constexpr Elems inner_product(const Elems elems1, const Elems elems2)
 {
-    const bool scalar = (has_scalar(elems1) && has_scalar(elems2)) ||
-                        (has_e1(elems1) && has_e1(elems2)) ||
+    const bool scalar = (has_scalar(elems1) && has_scalar(elems2)) || (has_e1(elems1) && has_e1(elems2)) ||
                         (has_e2(elems1) && has_e2(elems2)) || (has_e3(elems1) && has_e3(elems2)) ||
                         (has_e12(elems1) && has_e12(elems2)) || (has_e31(elems1) && has_e31(elems2)) ||
                         (has_e23(elems1) && has_e23(elems2)) || (has_e123(elems1) && has_e123(elems2));
@@ -398,7 +395,64 @@ constexpr Elems inner_product(const Elems elems1, const Elems elems2)
 
 constexpr Elems outer_product(const Elems elems1, const Elems elems2)
 {
-    return 0;
+    const bool scalar = (has_scalar(elems1) && has_scalar(elems2));
+
+    const bool e0 = (has_scalar(elems1) && has_e0(elems2)) || (has_e0(elems1) && has_scalar(elems2));
+
+    const bool e1 = (has_scalar(elems1) && has_e1(elems2)) || (has_e1(elems1) && has_scalar(elems2));
+
+    const bool e2 = (has_scalar(elems1) && has_e2(elems2)) || (has_e2(elems1) && has_scalar(elems2));
+
+    const bool e3 = (has_scalar(elems1) && has_e3(elems2)) || (has_e3(elems1) && has_scalar(elems2));
+
+    const bool e01 = (has_scalar(elems1) && has_e01(elems2)) || (has_e01(elems1) && has_scalar(elems2)) ||
+                     (has_e0(elems1) && has_e1(elems2)) || (has_e1(elems1) && has_e0(elems2));
+
+    const bool e02 = (has_scalar(elems1) && has_e02(elems2)) || (has_e02(elems1) && has_scalar(elems2)) ||
+                     (has_e0(elems1) && has_e2(elems2)) || (has_e2(elems1) && has_e0(elems2));
+
+    const bool e03 = (has_scalar(elems1) && has_e03(elems2)) || (has_e03(elems1) && has_scalar(elems2)) ||
+                     (has_e0(elems1) && has_e3(elems2)) || (has_e3(elems1) && has_e0(elems2));
+
+    const bool e12 = (has_scalar(elems1) && has_e12(elems2)) || (has_e12(elems1) && has_scalar(elems2)) ||
+                     (has_e1(elems1) && has_e2(elems2)) || (has_e2(elems1) && has_e1(elems2));
+
+    const bool e31 = (has_scalar(elems1) && has_e31(elems2)) || (has_e31(elems1) && has_scalar(elems2)) ||
+                     (has_e1(elems1) && has_e3(elems2)) || (has_e3(elems1) && has_e1(elems2));
+
+    const bool e23 = (has_scalar(elems1) && has_e23(elems2)) || (has_e23(elems1) && has_scalar(elems2)) ||
+                     (has_e2(elems1) && has_e3(elems2)) || (has_e3(elems1) && has_e2(elems2));
+
+    const bool e021 = (has_scalar(elems1) && has_e021(elems2)) || (has_e021(elems1) && has_scalar(elems2)) ||
+                      (has_e0(elems1) && has_e12(elems2)) || (has_e12(elems1) && has_e0(elems2)) ||
+                      (has_e1(elems1) && has_e02(elems2)) || (has_e02(elems1) && has_e1(elems2)) ||
+                      (has_e2(elems1) && has_e01(elems2)) || (has_e01(elems1) && has_e2(elems2));
+
+    const bool e013 = (has_scalar(elems1) && has_e013(elems2)) || (has_e013(elems1) && has_scalar(elems2)) ||
+                      (has_e0(elems1) && has_e31(elems2)) || (has_e31(elems1) && has_e0(elems2)) ||
+                      (has_e1(elems1) && has_e03(elems2)) || (has_e03(elems1) && has_e1(elems2)) ||
+                      (has_e3(elems1) && has_e01(elems2)) || (has_e01(elems1) && has_e3(elems2));
+
+    const bool e032 = (has_scalar(elems1) && has_e032(elems2)) || (has_e032(elems1) && has_scalar(elems2)) ||
+                      (has_e0(elems1) && has_e23(elems2)) || (has_e23(elems1) && has_e0(elems2)) ||
+                      (has_e2(elems1) && has_e03(elems2)) || (has_e03(elems1) && has_e2(elems2)) ||
+                      (has_e3(elems1) && has_e02(elems2)) || (has_e02(elems1) && has_e3(elems2));
+
+    const bool e123 = (has_scalar(elems1) && has_e123(elems2)) || (has_e123(elems1) && has_scalar(elems2)) ||
+                      (has_e1(elems1) && has_e23(elems2)) || (has_e23(elems1) && has_e1(elems2)) ||
+                      (has_e2(elems1) && has_e31(elems2)) || (has_e31(elems1) && has_e2(elems2)) ||
+                      (has_e3(elems1) && has_e12(elems2)) || (has_e12(elems1) && has_e3(elems2));
+
+    const bool e0123 = (has_scalar(elems1) && has_e0123(elems2)) || (has_e0123(elems1) && has_scalar(elems2)) ||
+                       (has_e0(elems1) && has_e123(elems2)) || (has_e123(elems1) && has_e0(elems2)) ||
+                       (has_e1(elems1) && has_e032(elems2)) || (has_e032(elems1) && has_e1(elems2)) ||
+                       (has_e2(elems1) && has_e013(elems2)) || (has_e013(elems1) && has_e2(elems2)) ||
+                       (has_e3(elems1) && has_e021(elems2)) || (has_e021(elems1) && has_e3(elems2)) ||
+                       (has_e01(elems1) && has_e23(elems2)) || (has_e23(elems1) && has_e01(elems2)) ||
+                       (has_e02(elems1) && has_e31(elems2)) || (has_e31(elems1) && has_e02(elems2)) ||
+                       (has_e03(elems1) && has_e12(elems2)) || (has_e12(elems1) && has_e03(elems2));
+
+    return elements(scalar, e0, e1, e2, e3, e01, e02, e03, e12, e31, e23, e021, e013, e032, e123, e0123);
 }
 
 constexpr Elems regressive_product(const Elems elems1, const Elems elems2)
@@ -463,8 +517,6 @@ constexpr Elems dual(Elems elems)
     result |= has_scalar(elems) ? static_cast<Elems>(elems::Values::kE0123) : 0UL;
     return result;
 }
-
-
 
 constexpr Elems PlaneElems = static_cast<Elems>(elems::Values::kE0) + static_cast<Elems>(elems::Values::kE1) +
                              static_cast<Elems>(elems::Values::kE2) + static_cast<Elems>(elems::Values::kE3);
