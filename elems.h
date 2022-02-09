@@ -518,10 +518,12 @@ constexpr Elems dual(Elems elems)
     return result;
 }
 
-constexpr Elems PlaneElems = static_cast<Elems>(elems::Values::kE0) + static_cast<Elems>(elems::Values::kE1) +
-                             static_cast<Elems>(elems::Values::kE2) + static_cast<Elems>(elems::Values::kE3);
+constexpr Elems ScalarElems = static_cast<Elems>(elems::Values::kScalar);
 
 constexpr Elems ComplexElems = static_cast<Elems>(elems::Values::kScalar) + static_cast<Elems>(elems::Values::kE12);
+
+constexpr Elems PlaneElems = static_cast<Elems>(elems::Values::kE0) + static_cast<Elems>(elems::Values::kE1) +
+                             static_cast<Elems>(elems::Values::kE2) + static_cast<Elems>(elems::Values::kE3);
 
 constexpr Elems LineElems = static_cast<Elems>(elems::Values::kE01) + static_cast<Elems>(elems::Values::kE02) +
                             static_cast<Elems>(elems::Values::kE03) + static_cast<Elems>(elems::Values::kE23) +

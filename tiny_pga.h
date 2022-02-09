@@ -30,6 +30,7 @@
 #include <array>
 #include <cstdint>
 #include <type_traits>
+#include <initializer_list>
 
 namespace tiny_pga
 {
@@ -102,7 +103,83 @@ struct Multivector
     static constexpr elems::Elems Elements = elements;
 
     /// values of Multivector elements
-    std::array<ScalarType, elems::count(elements)> values;
+    std::array<ScalarType, elems::count(elements)> values{};
+
+    Multivector(std::initializer_list<ScalarType> list)
+    {
+        std::copy(list.begin(), list.end(), values.begin());
+    }
+
+    /// explicit cast from other Multivector type
+    template <elems::Elems other_elements, typename OtherScalarType>
+    explicit Multivector(const Multivector<other_elements, OtherScalarType>& other)
+    {
+        using namespace elems;
+        if constexpr (has_elem<Scalar>(elements) && has_elem<Scalar>(other_elements))
+        {
+            value<Scalar>() = static_cast<ScalarType>(other.template value<Scalar>());
+        }
+        if constexpr (has_elem<E0>(elements) && has_elem<E0>(other_elements))
+        {
+            value<E0>() = static_cast<ScalarType>(other.template value<E0>());
+        }
+        if constexpr (has_elem<E1>(elements) && has_elem<E1>(other_elements))
+        {
+            value<E1>() = static_cast<ScalarType>(other.template value<E1>());
+        }
+        if constexpr (has_elem<E2>(elements) && has_elem<E2>(other_elements))
+        {
+            value<E2>() = static_cast<ScalarType>(other.template value<E2>());
+        }
+        if constexpr (has_elem<E3>(elements) && has_elem<E3>(other_elements))
+        {
+            value<E3>() = static_cast<ScalarType>(other.template value<E3>());
+        }
+        if constexpr (has_elem<E01>(elements) && has_elem<E01>(other_elements))
+        {
+            value<E01>() = static_cast<ScalarType>(other.template value<E01>());
+        }
+        if constexpr (has_elem<E02>(elements) && has_elem<E02>(other_elements))
+        {
+            value<E02>() = static_cast<ScalarType>(other.template value<E02>());
+        }
+        if constexpr (has_elem<E03>(elements) && has_elem<E03>(other_elements))
+        {
+            value<E03>() = static_cast<ScalarType>(other.template value<E03>());
+        }
+        if constexpr (has_elem<E12>(elements) && has_elem<E12>(other_elements))
+        {
+            value<E12>() = static_cast<ScalarType>(other.template value<E12>());
+        }
+        if constexpr (has_elem<E23>(elements) && has_elem<E23>(other_elements))
+        {
+            value<E23>() = static_cast<ScalarType>(other.template value<E23>());
+        }
+        if constexpr (has_elem<E31>(elements) && has_elem<E31>(other_elements))
+        {
+            value<E31>() = static_cast<ScalarType>(other.template value<E31>());
+        }
+        if constexpr (has_elem<E032>(elements) && has_elem<E032>(other_elements))
+        {
+            value<E032>() = static_cast<ScalarType>(other.template value<E032>());
+        }
+        if constexpr (has_elem<E013>(elements) && has_elem<E013>(other_elements))
+        {
+            value<E013>() = static_cast<ScalarType>(other.template value<E013>());
+        }
+        if constexpr (has_elem<E021>(elements) && has_elem<E021>(other_elements))
+        {
+            value<E021>() = static_cast<ScalarType>(other.template value<E021>());
+        }
+        if constexpr (has_elem<E123>(elements) && has_elem<E123>(other_elements))
+        {
+            value<E123>() = static_cast<ScalarType>(other.template value<E123>());
+        }
+        if constexpr (has_elem<E0123>(elements) && has_elem<E0123>(other_elements))
+        {
+            value<E0123>() = static_cast<ScalarType>(other.template value<E0123>());
+        }
+    }
 
     /// indexes
     // static constexpr std::array<std::size_t, elems::Names::Amount> indexes{elems::indexes(elements)};
@@ -156,7 +233,7 @@ struct Multivector
     Multivector<elems::geometric_product(elements, other_elements), ScalarType> operator*(
         const Multivector<other_elements, ScalarType>& other) const
     {
-        return geometric_product(*this, other);
+        return tiny_pga::geometric_product(*this, other);
     }
 
     /// Inner product operator (also known as Dot-product)
@@ -164,23 +241,47 @@ struct Multivector
     Multivector<elems::inner_product(elements, other_elements), ScalarType> operator|(
         const Multivector<other_elements, ScalarType>& other) const
     {
-        return inner_product(*this, other);
+        return tiny_pga::inner_product(*this, other);
     }
 
-    /// Outer product operator (also known as Vee- or Wedge- product)
+    /// Alias for Inner product (Dot-product)
+    template <elems::Elems other_elements>
+    Multivector<elems::inner_product(elements, other_elements), ScalarType> dot(
+        const Multivector<other_elements, ScalarType>& other) const
+    {
+        return tiny_pga::inner_product(*this, other);
+    }
+
+    /// Outer product operator (also known as Wedge- or Meet- product)
     template <elems::Elems other_elements>
     Multivector<elems::outer_product(elements, other_elements), ScalarType> operator^(
         const Multivector<other_elements, ScalarType>& other) const
     {
-        return outer_product(*this, other);
+        return tiny_pga::outer_product(*this, other);
     }
 
-    /// Regressive product operator (also known as Join-product)
+    /// Alias for Outer product operator
+    template <elems::Elems other_elements>
+    Multivector<elems::outer_product(elements, other_elements), ScalarType> meet(
+        const Multivector<other_elements, ScalarType>& other) const
+    {
+        return tiny_pga::outer_product(*this, other);
+    }
+
+    /// Regressive product operator (also known as Vee- or Join-product)
     template <elems::Elems other_elements>
     Multivector<elems::regressive_product(elements, other_elements), ScalarType> operator&(
         const Multivector<other_elements, ScalarType>& other) const
     {
-        return regressive_product(*this, other);
+        return tiny_pga::regressive_product(*this, other);
+    }
+
+    /// Alias for Regressive product operator
+    template <elems::Elems other_elements>
+    Multivector<elems::regressive_product(elements, other_elements), ScalarType> join(
+        const Multivector<other_elements, ScalarType>& other) const
+    {
+        return tiny_pga::regressive_product(*this, other);
     }
 
     /// Multivector addition
@@ -188,7 +289,15 @@ struct Multivector
     Multivector<elems::addition(elements, other_elements), ScalarType> operator+(
         const Multivector<other_elements, ScalarType>& other) const
     {
-        return addition(*this, other);
+        return tiny_pga::addition(*this, other);
+    }
+
+    /// Alias for addition
+    template <elems::Elems other_elements>
+    Multivector<elems::addition(elements, other_elements), ScalarType> add(
+        const Multivector<other_elements, ScalarType>& other) const
+    {
+        return tiny_pga::addition(*this, other);
     }
 
     /// Multivector subtraction
@@ -196,7 +305,22 @@ struct Multivector
     Multivector<elems::addition(elements, other_elements), ScalarType> operator-(
         const Multivector<other_elements, ScalarType>& other) const
     {
-        return subtraction(*this, other);
+        return tiny_pga::subtraction(*this, other);
+    }
+
+    /// Unary minus operator
+    Multivector<elements, ScalarType> operator-() const
+    {
+        Multivector<0, ScalarType> nothing{};
+        return tiny_pga::subtraction(nothing, *this);
+    }
+
+    /// Alias for subtraction
+    template <elems::Elems other_elements>
+    Multivector<elems::addition(elements, other_elements), ScalarType> sub(
+        const Multivector<other_elements, ScalarType>& other) const
+    {
+        return tiny_pga::subtraction(*this, other);
     }
 
     /// Reverse operator
@@ -217,7 +341,7 @@ inline Multivector<elems::geometric_product(first_elements, second_elements), Sc
     const Multivector<first_elements, ScalarType>& a,
     const Multivector<second_elements, ScalarType>& b)
 {
-    return geometric_product(a, b);
+    return tiny_pga::geometric_product(a, b);
 }
 
 template <elems::Elems first_elements, elems::Elems second_elements, typename ScalarType>
@@ -225,7 +349,7 @@ inline Multivector<elems::addition(first_elements, second_elements), ScalarType>
     const Multivector<first_elements, ScalarType>& a,
     const Multivector<second_elements, ScalarType>& b)
 {
-    return addition(a, b);
+    return tiny_pga::addition(a, b);
 }
 
 template <elems::Elems first_elements, elems::Elems second_elements, typename ScalarType>
@@ -233,7 +357,7 @@ inline Multivector<elems::addition(first_elements, second_elements), ScalarType>
     const Multivector<first_elements, ScalarType>& a,
     const Multivector<second_elements, ScalarType>& b)
 {
-    return subtraction(a, b);
+    return tiny_pga::subtraction(a, b);
 }
 
 /// Geometric Product operation
@@ -574,7 +698,135 @@ Multivector<elems::inner_product(first_elements, second_elements), ScalarType> i
     {
         ELEM_BOTH_MULTIPLY(E0123, Scalar, E0123, +=, +=);
     }
-    //#undef ELEM_BOTH_MULTIPLY
+#undef ELEM_BOTH_MULTIPLY
+    return out;
+}
+
+/// Outer Product operation
+template <elems::Elems first_elements, elems::Elems second_elements, typename ScalarType>
+Multivector<elems::outer_product(first_elements, second_elements), ScalarType> outer_product(
+    const Multivector<first_elements, ScalarType>& first,
+    const Multivector<second_elements, ScalarType>& second)
+{
+    using namespace elems;
+    constexpr Elems out_elems = outer_product(first_elements, second_elements);
+    Multivector<out_elems, ScalarType> out{};
+
+#define ELEM_BOTH_MULTIPLY(elem_out, elem1, elem2, sign1, sign2)                                             \
+    if constexpr (has_elem<elem1>(first_elements) && has_elem<elem2>(second_elements))                       \
+    {                                                                                                        \
+        out.template value<elem_out>() sign1 first.template value<elem1>() * second.template value<elem2>(); \
+    }                                                                                                        \
+    if constexpr (has_elem<elem2>(first_elements) && has_elem<elem1>(second_elements))                       \
+    {                                                                                                        \
+        out.template value<elem_out>() sign2 first.template value<elem2>() * second.template value<elem1>(); \
+    }
+
+    if constexpr (has_scalar(out_elems))
+    {
+        out.template value<Scalar>() += first.template value<Scalar>() + second.template value<Scalar>();
+    }
+
+    if constexpr (has_e0(out_elems))
+    {
+        ELEM_BOTH_MULTIPLY(E0, Scalar, E0, +=, +=);
+    }
+
+    if constexpr (has_e1(out_elems))
+    {
+        ELEM_BOTH_MULTIPLY(E1, Scalar, E1, +=, +=);
+    }
+
+    if constexpr (has_e2(out_elems))
+    {
+        ELEM_BOTH_MULTIPLY(E2, Scalar, E2, +=, +=);
+    }
+
+    if constexpr (has_e3(out_elems))
+    {
+        ELEM_BOTH_MULTIPLY(E3, Scalar, E3, +=, +=);
+    }
+
+    if constexpr (has_e01(out_elems))
+    {
+        ELEM_BOTH_MULTIPLY(E01, Scalar, E01, +=, +=);
+        ELEM_BOTH_MULTIPLY(E01, E0, E1, +=, -=);
+    }
+
+    if constexpr (has_e02(out_elems))
+    {
+        ELEM_BOTH_MULTIPLY(E02, Scalar, E02, +=, +=);
+        ELEM_BOTH_MULTIPLY(E02, E0, E2, +=, -=);
+    }
+
+    if constexpr (has_e03(out_elems))
+    {
+        ELEM_BOTH_MULTIPLY(E03, Scalar, E03, +=, +=);
+        ELEM_BOTH_MULTIPLY(E03, E0, E3, +=, -=);
+    }
+
+    if constexpr (has_e12(out_elems))
+    {
+        ELEM_BOTH_MULTIPLY(E12, Scalar, E12, +=, +=);
+        ELEM_BOTH_MULTIPLY(E12, E1, E2, +=, -=);
+    }
+
+    if constexpr (has_e31(out_elems))
+    {
+        ELEM_BOTH_MULTIPLY(E31, Scalar, E31, +=, +=);
+        ELEM_BOTH_MULTIPLY(E31, E3, E1, +=, -=);
+    }
+
+    if constexpr (has_e23(out_elems))
+    {
+        ELEM_BOTH_MULTIPLY(E23, Scalar, E23, +=, +=);
+        ELEM_BOTH_MULTIPLY(E23, E2, E3, +=, -=);
+    }
+
+    if constexpr (has_e021(out_elems))
+    {
+        ELEM_BOTH_MULTIPLY(E021, Scalar, E021, +=, +=);
+        ELEM_BOTH_MULTIPLY(E021, E0, E12, -=, +=);
+        ELEM_BOTH_MULTIPLY(E021, E1, E02, +=, -=);
+        ELEM_BOTH_MULTIPLY(E021, E2, E01, -=, +=);
+    }
+
+    if constexpr (has_e013(out_elems))
+    {
+        ELEM_BOTH_MULTIPLY(E013, Scalar, E013, +=, +=);
+        ELEM_BOTH_MULTIPLY(E013, E0, E31, -=, +=);
+        ELEM_BOTH_MULTIPLY(E013, E1, E03, -=, +=);
+        ELEM_BOTH_MULTIPLY(E013, E3, E01, +=, -=);
+    }
+
+    if constexpr (has_e032(out_elems))
+    {
+        ELEM_BOTH_MULTIPLY(E032, Scalar, E032, +=, +=);
+        ELEM_BOTH_MULTIPLY(E032, E0, E23, -=, +=);
+        ELEM_BOTH_MULTIPLY(E032, E2, E03, +=, -=);
+        ELEM_BOTH_MULTIPLY(E032, E3, E02, -=, +=);
+    }
+
+    if constexpr (has_e123(out_elems))
+    {
+        ELEM_BOTH_MULTIPLY(E123, Scalar, E123, +=, +=);
+        ELEM_BOTH_MULTIPLY(E123, E1, E23, +=, +=);
+        ELEM_BOTH_MULTIPLY(E123, E2, E31, +=, +=);
+        ELEM_BOTH_MULTIPLY(E123, E3, E12, +=, +=);
+    }
+
+    if constexpr (has_e0123(out_elems))
+    {
+        ELEM_BOTH_MULTIPLY(E0123, Scalar, E0123, +=, +=);
+        ELEM_BOTH_MULTIPLY(E0123, E0, E123, +=, +=);
+        ELEM_BOTH_MULTIPLY(E0123, E1, E032, +=, +=);
+        ELEM_BOTH_MULTIPLY(E0123, E2, E013, +=, +=);
+        ELEM_BOTH_MULTIPLY(E0123, E3, E021, +=, +=);
+        ELEM_BOTH_MULTIPLY(E0123, E01, E23, +=, +=);
+        ELEM_BOTH_MULTIPLY(E0123, E02, E31, +=, +=);
+        ELEM_BOTH_MULTIPLY(E0123, E03, E12, +=, +=);
+    }
+#undef ELEM_BOTH_MULTIPLY
     return out;
 }
 
@@ -587,13 +839,13 @@ Multivector<elems::addition(first_elements, second_elements), ScalarType> additi
     Multivector<out_elems, ScalarType> out{};
 
 #define ELEM_ADD(name)                                                   \
-    if constexpr (elems::has_elem<name>(out_elems))                                \
+    if constexpr (elems::has_elem<name>(out_elems))                      \
     {                                                                    \
-        if constexpr (elems::has_elem<name>(first_elements))                       \
+        if constexpr (elems::has_elem<name>(first_elements))             \
         {                                                                \
             out.template value<name>() = first.template value<name>();   \
         }                                                                \
-        if constexpr (elems::has_elem<name>(second_elements))                      \
+        if constexpr (elems::has_elem<name>(second_elements))            \
         {                                                                \
             out.template value<name>() += second.template value<name>(); \
         }                                                                \
@@ -627,13 +879,13 @@ Multivector<elems::addition(first_elements, second_elements), ScalarType> subtra
     Multivector<out_elems, ScalarType> out{};
 
 #define ELEM_SUB(name)                                                   \
-    if constexpr (elems::has_elem<name>(out_elems))                                \
+    if constexpr (elems::has_elem<name>(out_elems))                      \
     {                                                                    \
-        if constexpr (elems::has_elem<name>(first_elements))                       \
+        if constexpr (elems::has_elem<name>(first_elements))             \
         {                                                                \
             out.template value<name>() = first.template value<name>();   \
         }                                                                \
-        if constexpr (elems::has_elem<name>(second_elements))                      \
+        if constexpr (elems::has_elem<name>(second_elements))            \
         {                                                                \
             out.template value<name>() -= second.template value<name>(); \
         }                                                                \
@@ -734,7 +986,7 @@ template <elems::Elems elements, typename ScalarType>
 Multivector<elems::dual(elements), ScalarType> dual(const Multivector<elements, ScalarType>& other)
 {
     using namespace elems;
-    Multivector<elems::dual(elements), ScalarType> out;
+    Multivector<elems::dual(elements), ScalarType> out{};
     if constexpr (elems::has_e0123(elements))
     {
         out.template value<Scalar>() = other.template value<E0123>();
@@ -803,8 +1055,9 @@ Multivector<elems::dual(elements), ScalarType> dual(const Multivector<elements, 
 }
 
 /// Pre-defined float-typed primitives
-using PlaneF = Multivector<elems::PlaneElems, float>;
+using ScalarF = Multivector<elems::ScalarElems, float>;
 using ComplexF = Multivector<elems::ComplexElems, float>;
+using PlaneF = Multivector<elems::PlaneElems, float>;
 using LineF = Multivector<elems::LineElems, float>;
 using PointF = Multivector<elems::PointElems, float>;
 using RotorF = Multivector<elems::RotorElems, float>;
@@ -812,8 +1065,9 @@ using TranslatorF = Multivector<elems::TranslatorElems, float>;
 using MotorF = Multivector<elems::MotorElems, float>;
 
 /// Pre-defined double-typed primitives
-using PlaneD = Multivector<elems::PlaneElems, double>;
+using ScalarD = Multivector<elems::ScalarElems, double>;
 using ComplexD = Multivector<elems::ComplexElems, double>;
+using PlaneD = Multivector<elems::PlaneElems, double>;
 using LineD = Multivector<elems::LineElems, double>;
 using PointD = Multivector<elems::PointElems, double>;
 using RotorD = Multivector<elems::RotorElems, double>;

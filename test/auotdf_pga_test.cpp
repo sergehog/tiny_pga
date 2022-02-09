@@ -34,7 +34,7 @@ TEST(AutoDfPGATest, SimpleTest)
     Float w = Float(1.F, true);
     Float::ConstantsByDefault();
 
-    Multivector<elems::PointElems, Float> X;
+    Multivector<elems::PointElems, Float> X{};
     X[E021] = x;
     X[E013] = y;
     X[E032] = z;

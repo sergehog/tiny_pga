@@ -394,51 +394,68 @@ TEST_P(PgaElementsTest, OuterProductSquaringTest)
     EXPECT_EQ(elems::has_e0123(resulting_elems), is_e0123_expected);
 }
 
-// TEST_P(PgaElementsTest, GeometricProductIsSumOfInnerAndOuterTest)
-//{
-//    bool test_scalar{}, test_e0{}, test_e1{}, test_e2{}, test_e3{}, test_e01{}, test_e02{}, test_e03{}, test_e12{},
-//        test_e31{}, test_e23{}, test_e021{}, test_e013{}, test_e032{}, test_e123{}, test_e0123{};
-//    std::tie(test_scalar,
-//             test_e0,
-//             test_e1,
-//             test_e2,
-//             test_e3,
-//             test_e01,
-//             test_e02,
-//             test_e03,
-//             test_e12,
-//             test_e31,
-//             test_e23,
-//             test_e021,
-//             test_e013,
-//             test_e032,
-//             test_e123,
-//             test_e0123) = GetParam();
-//
-//    const Elems elem = elems::elements(test_scalar,
-//                                       test_e0,
-//                                       test_e1,
-//                                       test_e2,
-//                                       test_e3,
-//                                       test_e01,
-//                                       test_e02,
-//                                       test_e03,
-//                                       test_e12,
-//                                       test_e31,
-//                                       test_e23,
-//                                       test_e021,
-//                                       test_e013,
-//                                       test_e032,
-//                                       test_e123,
-//                                       test_e0123);
-//
-//    const Elems gp_elems = elems::geometric_product(elem, elem);
-//    const Elems ip_elems = elems::inner_product(elem, elem);
-//    const Elems op_elems = elems::outer_product(elem, elem);
-//    const Elems test_elems = ip_elems | op_elems;
-//
-//    EXPECT_EQ(gp_elems, test_elems);
-//}
+// Check if geometric product rule (A*B = A|B + A^B) holds for vectors
+TEST_P(PgaElementsTest, GeometricProductOfVectorIsSumOfInnerAndOuterProductsTest)
+{
+    bool test_scalar{}, test_e0{}, test_e1{}, test_e2{}, test_e3{}, test_e01{}, test_e02{}, test_e03{}, test_e12{},
+        test_e31{}, test_e23{}, test_e021{}, test_e013{}, test_e032{}, test_e123{}, test_e0123{};
+    std::tie(test_scalar,
+             test_e0,
+             test_e1,
+             test_e2,
+             test_e3,
+             test_e01,
+             test_e02,
+             test_e03,
+             test_e12,
+             test_e31,
+             test_e23,
+             test_e021,
+             test_e013,
+             test_e032,
+             test_e123,
+             test_e0123) = GetParam();
+
+    const Elems elem1 = elems::elements(false,
+                                        test_e0,
+                                        test_e1,
+                                        test_e2,
+                                        test_e3,
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        false);
+
+    const Elems elem2 = elems::elements(false,
+                                        test_e01,
+                                        test_e02,
+                                        test_e03,
+                                        test_e12,
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        false);
+
+    const Elems gp_elems = elems::geometric_product(elem1, elem2);
+    const Elems ip_elems = elems::inner_product(elem1, elem2);
+    const Elems op_elems = elems::outer_product(elem1, elem2);
+    const Elems test_elems = ip_elems | op_elems;
+    EXPECT_EQ(gp_elems, test_elems);
+}
 
 /// Dualization of elements two times must result in the same elements as initial
 TEST_P(PgaElementsTest, DualElementsTest)
