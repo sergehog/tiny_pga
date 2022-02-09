@@ -19,3 +19,18 @@ add_test(NAME pga_test COMMAND pga_test)
 add_test(NAME auotdf_pga_test COMMAND auotdf_pga_test)
 add_test(NAME autodf_pga3d_test COMMAND autodf_pga3d_test)
 
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+
+        set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
+        include(CodeCoverage)
+        append_coverage_compiler_flags()
+
+        setup_target_for_coverage_gcovr_html(
+                NAME tinypga_test_coverage
+                EXECUTABLE ctest --verbose
+                DEPENDENCIES elements_test pga_test auotdf_pga_test autodf_pga3d_test
+                BASE_DIRECTORY "../"
+                EXCLUDE "test" "tiny_autodf/test"
+        )
+
+endif()
