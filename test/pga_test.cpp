@@ -27,7 +27,7 @@ class PgaTest : public ::testing::Test
     PgaTest() = default;
 };
 
-/// multivector works as a scalar
+/// Multivector works as a scalar
 TEST_F(PgaTest, ScalarTest)
 {
     ScalarF mv{11.F};
@@ -46,7 +46,7 @@ TEST_F(PgaTest, ScalarTest)
     EXPECT_EQ(mv2.value<Scalar>(), 15.F * 15.F);
 }
 
-/// multivector works as a complex number
+/// Multivector works as a complex number
 TEST_F(PgaTest, ComplexTest)
 {
     ComplexF mv{0.F, 1.F};
@@ -74,18 +74,21 @@ TEST_F(PgaTest, RotorTest)
 
     // Rotor is identity, so point2 values must be the same as in point
     const auto point2 = rotor * point * ~rotor;
+    const auto point3 = point << rotor;
 
     EXPECT_NEAR(point2[E021], point[E021], 1e-5);
     EXPECT_NEAR(point2[E013], point[E013], 1e-5);
     EXPECT_NEAR(point2[E032], point[E032], 1e-5);
     EXPECT_NEAR(point2[E123], point[E123], 1e-5);
+
+    EXPECT_EQ(point3.Elements, point.Elements);
 }
 
 TEST_F(PgaTest, PlaneTest)
 {
     // Plane is pure vector in PGA
     PlaneF p{1, 2, 3, 4};
-    // squaring with dot-product
+    // squaring with Dot-product
     auto p_dot = p | p;  // must be a scalar
     EXPECT_EQ(p_dot.Elements, ScalarElems);
 
@@ -119,10 +122,10 @@ TEST(BasicTest, RotorTest)
     // rotated back
     auto p3 = ~R * p2 * R;
 
-//    EXPECT_NEAR(p[E021], p3[E021], 1e-5);
-//    EXPECT_NEAR(p[E013], p3[E013], 1e-5);
-//    EXPECT_NEAR(p[E032], p3[E032], 1e-5);
-//    EXPECT_NEAR(p[E123], p3[E123], 1e-5);
+    //    EXPECT_NEAR(p[E021], p3[E021], 1e-5);
+    //    EXPECT_NEAR(p[E013], p3[E013], 1e-5);
+    //    EXPECT_NEAR(p[E032], p3[E032], 1e-5);
+    //    EXPECT_NEAR(p[E123], p3[E123], 1e-5);
 }
 
 // Check if geometric product rule (A*B = A|B + A^B) holds for vectors
@@ -182,4 +185,3 @@ REGISTER_TYPED_TEST_SUITE_P(AllMultivectorsTest, BasicTest);
 using MultivectorTypes =
     ::testing::Types<Multivector<Scalar>, PlaneF, ComplexF, LineF, PointF, RotorF, TranslatorF, MotorF>;
 INSTANTIATE_TYPED_TEST_SUITE_P(My, AllMultivectorsTest, MultivectorTypes);
-

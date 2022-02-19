@@ -21,7 +21,7 @@
 using namespace tiny_pga;
 using namespace tiny_pga::elems;
 
-/// Converts tuple of 16 bools into Elems value
+/// Converts tuple of 16 bools into Elems Value
 Elems elements(
     const std::tuple<bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool>
         elems)
@@ -70,6 +70,31 @@ TEST(BasicTest, GeometricProductElementsTest)
     // Multiplication of 2 motors still a motor
     const Elems OutMotorElems = elems::geometric_product(elems::MotorElems, elems::MotorElems);
     EXPECT_EQ(OutMotorElems, elems::MotorElems);
+}
+
+/// Points, Lines and Planes must combine in specific ways
+TEST(BasicTest, JoinMeetProjectElementsTest)
+{
+    auto join_line = elems::regressive_product(PointElems, PointElems);
+    EXPECT_EQ(LineElems, join_line);
+
+    auto join_plane = elems::regressive_product(LineElems, PointElems);
+    EXPECT_EQ(PlaneElems, join_plane);
+
+    auto meet_line = elems::outer_product(PlaneElems, PlaneElems);
+    EXPECT_EQ(LineElems, meet_line);
+
+    auto meet_point = elems::outer_product(PlaneElems, LineElems);
+    EXPECT_EQ(PointElems, meet_point);
+
+    auto project_plane = elems::inner_product(PlaneElems, LineElems);
+    EXPECT_EQ(PlaneElems, project_plane);
+
+    auto project_line = elems::inner_product(PlaneElems, PointElems);
+    EXPECT_EQ(LineElems, project_line);
+
+    auto project_plane2 = elems::inner_product(LineElems, PointElems);
+    EXPECT_EQ(PlaneElems, project_plane2);
 }
 
 /// Test class for checking all possible element combinations

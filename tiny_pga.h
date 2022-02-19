@@ -28,9 +28,10 @@
 
 #include "elems.h"
 #include <array>
+#include <cmath>
 #include <cstdint>
-#include <type_traits>
 #include <initializer_list>
+#include <type_traits>
 
 namespace tiny_pga
 {
@@ -71,9 +72,8 @@ Multivector<elems::commutator_product(first_elements, second_elements), ScalarTy
 
 /// Sandwich (transform) Product
 template <elems::Elems first_elements, elems::Elems second_elements, typename ScalarType>
-Multivector<elems::sandwich_product(first_elements, second_elements), ScalarType> sandwich_product(
-    const Multivector<first_elements, ScalarType>&,
-    const Multivector<second_elements, ScalarType>&);
+Multivector<first_elements, ScalarType> sandwich_product(const Multivector<first_elements, ScalarType>&,
+                                                         const Multivector<second_elements, ScalarType>&);
 
 /// Addition
 template <elems::Elems first_elements, elems::Elems second_elements, typename ScalarType>
@@ -95,6 +95,10 @@ Multivector<elements, ScalarType> reverse(const Multivector<elements, ScalarType
 template <elems::Elems elements, typename ScalarType>
 Multivector<elems::dual(elements), ScalarType> dual(const Multivector<elements, ScalarType>&);
 
+/// Clifford Conjugation
+template <elems::Elems elements, typename ScalarType>
+Multivector<elements, ScalarType> conjugate(const Multivector<elements, ScalarType>& object);
+
 template <elems::Elems elements, typename ScalarType>
 struct Multivector
 {
@@ -105,10 +109,7 @@ struct Multivector
     /// values of Multivector elements
     std::array<ScalarType, elems::count(elements)> values{};
 
-    Multivector(std::initializer_list<ScalarType> list)
-    {
-        std::copy(list.begin(), list.end(), values.begin());
-    }
+    Multivector(std::initializer_list<ScalarType> list) { std::copy(list.begin(), list.end(), values.begin()); }
 
     /// explicit cast from other Multivector type
     template <elems::Elems other_elements, typename OtherScalarType>
@@ -334,6 +335,26 @@ struct Multivector
 
     /// Duality function
     Multivector<elems::dual(elements), ScalarType> dual() const { return tiny_pga::dual(*this); }
+
+    /// sandwich product with Rotor
+    Multivector<elements, ScalarType> operator<<(const Multivector<elems::RotorElems, ScalarType>& other) const
+    {
+        return tiny_pga::sandwich_product(*this, other);
+    }
+
+    /// sandwich product with Translator
+    Multivector<elements, ScalarType> operator<<(const Multivector<elems::TranslatorElems, ScalarType>& other) const
+    {
+        return tiny_pga::sandwich_product(*this, other);
+    }
+
+    /// sandwich product with Motor
+    Multivector<elements, ScalarType> operator<<(const Multivector<elems::MotorElems, ScalarType>& other) const
+    {
+        return tiny_pga::sandwich_product(*this, other);
+    }
+
+    Multivector<elements, ScalarType> Normalized() const { return *this * ScalarType(1.F / norm(*this)); }
 };
 
 template <elems::Elems first_elements, elems::Elems second_elements, typename ScalarType>
@@ -359,6 +380,36 @@ inline Multivector<elems::addition(first_elements, second_elements), ScalarType>
 {
     return tiny_pga::subtraction(a, b);
 }
+
+#ifdef TRY_AVOIDING_MACCOS
+// instead of ELEM_MULTIPLY / ELEM_BOTH_MULTIPLY maxcros we may try something like that
+// namespace internal
+//{
+// template <elems::Elems first_elements,
+//          elems::Elems second_elements,
+//          elems::Names elem1,
+//          elems::Names elem2,
+//          typename ScalarType>
+// ScalarType elemMultiply(const Multivector<first_elements, ScalarType>& first,
+//                        const Multivector<second_elements, ScalarType>& second)
+//{
+//    if constexpr (elems::has_elem<elem1>(first_elements) && elems::has_elem<elem2>(second_elements))
+//    {
+//        return  first.template value<elem1>() * second.template value<elem2>();
+//    }
+//    return 0;
+//}
+// out.template value<Scalar>() += internal::elemMultiply<first_elements, second_elements, Scalar, Scalar,
+// ScalarType>(first, second); out.template value<Scalar>() += internal::elemMultiply<first_elements, second_elements,
+// E1, E1, ScalarType>(first, second); out.template value<Scalar>() += internal::elemMultiply<first_elements,
+// second_elements, E2, E2, ScalarType>(first, second); out.template value<Scalar>() +=
+// internal::elemMultiply<first_elements, second_elements, E3, E3, ScalarType>(first, second); out.template
+// value<Scalar>() -= internal::elemMultiply<first_elements, second_elements, E12, E12, ScalarType>(first, second);
+// out.template value<Scalar>() -= internal::elemMultiply<first_elements, second_elements, E31, E31, ScalarType>(first,
+// second); out.template value<Scalar>() -= internal::elemMultiply<first_elements, second_elements, E23, E23,
+// ScalarType>(first, second); out.template value<Scalar>() -= internal::elemMultiply<first_elements, second_elements,
+// E123, E123, ScalarType>(first, second); } //namespace internal
+#endif
 
 /// Geometric Product operation
 template <elems::Elems first_elements, elems::Elems second_elements, typename ScalarType>
@@ -1054,6 +1105,91 @@ Multivector<elems::dual(elements), ScalarType> dual(const Multivector<elements, 
     return out;
 }
 
+template <elems::Elems first_elements, elems::Elems second_elements, typename ScalarType>
+Multivector<first_elements, ScalarType> sandwich_product(const Multivector<first_elements, ScalarType>& object,
+                                                         const Multivector<second_elements, ScalarType>& motor)
+{
+    return Multivector<first_elements>(motor * object * ~motor);
+}
+
+template <elems::Elems elements, typename ScalarType>
+Multivector<elements, ScalarType> conjugate(const Multivector<elements, ScalarType>& object)
+{
+    using namespace elems;
+    Multivector<elements, ScalarType> out;
+    if constexpr (has_scalar(elements))
+    {
+        out.template value<Scalar>() = object.template value<Scalar>();
+    }
+    if constexpr (has_e0(elements))
+    {
+        out.template value<E0>() = -object.template value<E0>();
+    }
+    if constexpr (has_e1(elements))
+    {
+        out.template value<E1>() = -object.template value<E1>();
+    }
+    if constexpr (has_e2(elements))
+    {
+        out.template value<E2>() = -object.template value<E2>();
+    }
+    if constexpr (has_e3(elements))
+    {
+        out.template value<E3>() = -object.template value<E3>();
+    }
+    if constexpr (has_e01(elements))
+    {
+        out.template value<E01>() = -object.template value<E01>();
+    }
+    if constexpr (has_e02(elements))
+    {
+        out.template value<E02>() = -object.template value<E02>();
+    }
+    if constexpr (has_e03(elements))
+    {
+        out.template value<E03>() = -object.template value<E03>();
+    }
+    if constexpr (has_e23(elements))
+    {
+        out.template value<E23>() = -object.template value<E23>();
+    }
+    if constexpr (has_e31(elements))
+    {
+        out.template value<E31>() = -object.template value<E31>();
+    }
+    if constexpr (has_e12(elements))
+    {
+        out.template value<E12>() = -object.template value<E12>();
+    }
+    if constexpr (has_e123(elements))
+    {
+        out.template value<E123>() = object.template value<E123>();
+    }
+    if constexpr (has_e032(elements))
+    {
+        out.template value<E032>() = object.template value<E032>();
+    }
+    if constexpr (has_e013(elements))
+    {
+        out.template value<013>() = object.template value<013>();
+    }
+    if constexpr (has_e021(elements))
+    {
+        out.template value<E021>() = object.template value<E021>();
+    }
+    if constexpr (has_e0123(elements))
+    {
+        out.template value<E0123>() = object.template value<E0123>();
+    }
+    return out;
+};
+
+template <elems::Elems elements, typename ScalarType>
+ScalarType norm(const Multivector<elements, ScalarType>& object)
+{
+    return std::sqrt(std::abs(object * conjugate(object).template values<elems::Scalar>()));
+}
+
 /// Pre-defined float-typed primitives
 using ScalarF = Multivector<elems::ScalarElems, float>;
 using ComplexF = Multivector<elems::ComplexElems, float>;
@@ -1073,6 +1209,13 @@ using PointD = Multivector<elems::PointElems, double>;
 using RotorD = Multivector<elems::RotorElems, double>;
 using TranslatorD = Multivector<elems::TranslatorElems, double>;
 using MotorD = Multivector<elems::MotorElems, double>;
+
+template <typename ScalarType = float>
+static Multivector<elems::RotorElems, ScalarType> Rotor(const ScalarType angle,
+                                                        const Multivector<elems::LineElems, ScalarType> line)
+{
+    return std::cos(angle / ScalarType(2.0)) + std::sin(angle / ScalarType(2.0)) * line.normalized();
+}
 
 }  // namespace tiny_pga
 

@@ -455,17 +455,7 @@ constexpr Elems outer_product(const Elems elems1, const Elems elems2)
     return elements(scalar, e0, e1, e2, e3, e01, e02, e03, e12, e31, e23, e021, e013, e032, e123, e0123);
 }
 
-constexpr Elems regressive_product(const Elems elems1, const Elems elems2)
-{
-    return 0;
-}
-
 constexpr Elems commutator_product(const Elems elems1, const Elems elems2)
-{
-    return 0;
-}
-
-constexpr Elems sandwich_product(const Elems elems1, const Elems elems2)
 {
     return 0;
 }
@@ -516,6 +506,11 @@ constexpr Elems dual(Elems elems)
 
     result |= has_scalar(elems) ? static_cast<Elems>(elems::Values::kE0123) : 0UL;
     return result;
+}
+
+constexpr Elems regressive_product(const Elems elems1, const Elems elems2)
+{
+    return elems::dual(elems::outer_product(elems::dual(elems1), elems::dual(elems2)));
 }
 
 constexpr Elems ScalarElems = static_cast<Elems>(elems::Values::kScalar);
