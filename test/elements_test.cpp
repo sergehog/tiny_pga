@@ -51,6 +51,9 @@ TEST(BasicTest, GeometricProductElementsTest)
     const Elems OutScalarElems = elems::geometric_product(ScalarElems, ScalarElems);
     EXPECT_EQ(OutScalarElems, ScalarElems);
 
+    const Elems OutE01 = elems::geometric_product(Elems(elems::Values::kE0), Elems(elems::Values::kE1));
+    EXPECT_EQ(OutE01, Elems(elems::Values::kE01));
+
     const Elems ComplexElems = static_cast<Elems>(elems::Values::kScalar) | static_cast<Elems>(elems::Values::kE12);
     const Elems OutComplexElems = elems::geometric_product(ComplexElems, ComplexElems);
     EXPECT_EQ(OutComplexElems, ComplexElems);

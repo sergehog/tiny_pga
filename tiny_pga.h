@@ -354,7 +354,7 @@ struct Multivector
         return tiny_pga::sandwich_product(*this, other);
     }
 
-    Multivector<elements, ScalarType> Normalized() const { return *this * ScalarType(1.F / norm(*this)); }
+    Multivector<elements, ScalarType> normalized() const { return *this * ScalarType(1.F / norm(*this)); }
 };
 
 template <elems::Elems first_elements, elems::Elems second_elements, typename ScalarType>
@@ -365,11 +365,45 @@ inline Multivector<elems::geometric_product(first_elements, second_elements), Sc
     return tiny_pga::geometric_product(a, b);
 }
 
+template <elems::Elems first_elements, typename ScalarType>
+inline Multivector<elems::geometric_product(first_elements, elems::Elems(elems::Values::kScalar)), ScalarType>
+operator*(const Multivector<first_elements, ScalarType>& a, const ScalarType& s)
+{
+    Multivector<elems::Elems(elems::Values::kScalar), ScalarType> b{s};
+    return tiny_pga::geometric_product(a, b);
+}
+
+template <elems::Elems second_elements, typename ScalarType>
+inline Multivector<elems::geometric_product(elems::Elems(elems::Values::kScalar), second_elements), ScalarType>
+operator*(const ScalarType& s, const Multivector<second_elements, ScalarType>& b)
+{
+    Multivector<elems::Elems(elems::Values::kScalar), ScalarType> a{s};
+    return tiny_pga::geometric_product(a, b);
+}
+
 template <elems::Elems first_elements, elems::Elems second_elements, typename ScalarType>
 inline Multivector<elems::addition(first_elements, second_elements), ScalarType> operator+(
     const Multivector<first_elements, ScalarType>& a,
     const Multivector<second_elements, ScalarType>& b)
 {
+    return tiny_pga::addition(a, b);
+}
+
+template <elems::Elems first_elements, typename ScalarType>
+inline Multivector<elems::addition(first_elements, elems::Elems(elems::Values::kScalar)), ScalarType> operator+(
+    const Multivector<first_elements, ScalarType>& a,
+    const ScalarType& s)
+{
+    Multivector<elems::Elems(elems::Values::kScalar), ScalarType> b{s};
+    return tiny_pga::addition(a, b);
+}
+
+template <elems::Elems second_elements, typename ScalarType>
+inline Multivector<elems::addition(elems::Elems(elems::Values::kScalar), second_elements), ScalarType> operator+(
+    const ScalarType& s,
+    const Multivector<second_elements, ScalarType>& b)
+{
+    Multivector<elems::Elems(elems::Values::kScalar), ScalarType> a{s};
     return tiny_pga::addition(a, b);
 }
 
@@ -1112,11 +1146,20 @@ Multivector<first_elements, ScalarType> sandwich_product(const Multivector<first
     return Multivector<first_elements>(motor * object * ~motor);
 }
 
+template <elems::Elems first_elements, elems::Elems second_elements, typename ScalarType>
+Multivector<elems::regressive_product(first_elements, second_elements), ScalarType> regressive_product(
+    const Multivector<first_elements, ScalarType>& a,
+    const Multivector<second_elements, ScalarType>& b)
+{
+    constexpr auto type = elems::regressive_product(first_elements, second_elements);
+    return Multivector<type, ScalarType>(dual(dual(a) ^ dual(b)));
+}
+
 template <elems::Elems elements, typename ScalarType>
 Multivector<elements, ScalarType> conjugate(const Multivector<elements, ScalarType>& object)
 {
     using namespace elems;
-    Multivector<elements, ScalarType> out;
+    Multivector<elements, ScalarType> out{};
     if constexpr (has_scalar(elements))
     {
         out.template value<Scalar>() = object.template value<Scalar>();
@@ -1187,7 +1230,47 @@ Multivector<elements, ScalarType> conjugate(const Multivector<elements, ScalarTy
 template <elems::Elems elements, typename ScalarType>
 ScalarType norm(const Multivector<elements, ScalarType>& object)
 {
-    return std::sqrt(std::abs(object * conjugate(object).template values<elems::Scalar>()));
+    return std::sqrt(std::abs((object * conjugate(object)).template value<elems::Scalar>()));
+}
+
+/// Rotor around Euclidean line
+template <typename ScalarType = float>
+static Multivector<elems::RotorElems, ScalarType> Rotor(const ScalarType angle,
+                                                        const Multivector<elems::LineElems, ScalarType>& line)
+{
+    return Multivector<elems::RotorElems, ScalarType>(std::cos(angle / ScalarType(2.0)) +
+                                                      std::sin(angle / ScalarType(2.0)) * line.normalized());
+}
+
+/// Translator over directed line
+template <typename ScalarType = float>
+static Multivector<elems::TranslatorElems, ScalarType> Translator(const ScalarType dist,
+                                                                  const Multivector<elems::LineElems, ScalarType>& line)
+{
+    return ScalarType(1) + (dist / ScalarType(2.0)) * line;
+}
+
+/// Translator
+template <typename ScalarType = float>
+static Multivector<elems::TranslatorElems, ScalarType> Translator(const ScalarType dx,
+                                                                  const ScalarType dy,
+                                                                  const ScalarType dz)
+{
+    return Multivector<elems::PlaneElems, ScalarType>{1, -dx / 2., -dy / 2., -dz / 2.};
+}
+
+/// A plane is defined using its homogenous equation ax + by + cz + d = 0
+template <typename ScalarType = float>
+static Multivector<elems::PlaneElems, ScalarType> Plane(ScalarType a, ScalarType b, ScalarType c, ScalarType d)
+{
+    return Multivector<elems::PlaneElems, ScalarType>{d, a, b, c};
+}
+
+/// A point is just a homogeneous point, euclidean coordinates plus the origin
+template <typename ScalarType = float>
+static Multivector<elems::PointElems, ScalarType> Point(const ScalarType& x, const ScalarType& y, const ScalarType& z)
+{
+    return Multivector<elems::PointElems, ScalarType>{x, y, z, 1.};
 }
 
 /// Pre-defined float-typed primitives
@@ -1210,13 +1293,24 @@ using RotorD = Multivector<elems::RotorElems, double>;
 using TranslatorD = Multivector<elems::TranslatorElems, double>;
 using MotorD = Multivector<elems::MotorElems, double>;
 
-template <typename ScalarType = float>
-static Multivector<elems::RotorElems, ScalarType> Rotor(const ScalarType angle,
-                                                        const Multivector<elems::LineElems, ScalarType> line)
+namespace float_basis
 {
-    return std::cos(angle / ScalarType(2.0)) + std::sin(angle / ScalarType(2.0)) * line.normalized();
-}
-
+const static Multivector<elems::Elems(elems::Values::kE0), float> e0{1};
+const static Multivector<elems::Elems(elems::Values::kE1), float> e1{1};
+const static Multivector<elems::Elems(elems::Values::kE2), float> e2{1};
+const static Multivector<elems::Elems(elems::Values::kE3), float> e3{1};
+const static Multivector<elems::Elems(elems::Values::kE01), float> e01{1};
+const static Multivector<elems::Elems(elems::Values::kE02), float> e02{1};
+const static Multivector<elems::Elems(elems::Values::kE03), float> e03{1};
+const static Multivector<elems::Elems(elems::Values::kE12), float> e12{1};
+const static Multivector<elems::Elems(elems::Values::kE23), float> e23{1};
+const static Multivector<elems::Elems(elems::Values::kE31), float> e31{1};
+const static Multivector<elems::Elems(elems::Values::kE021), float> e021{1};
+const static Multivector<elems::Elems(elems::Values::kE032), float> e032{1};
+const static Multivector<elems::Elems(elems::Values::kE013), float> e013{1};
+const static Multivector<elems::Elems(elems::Values::kE123), float> e123{1};
+const static Multivector<elems::Elems(elems::Values::kE0123), float> e0123{1};
+}  // namespace float_basis
 }  // namespace tiny_pga
 
 #endif  // TINY_PGA_H

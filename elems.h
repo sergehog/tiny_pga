@@ -62,7 +62,7 @@ enum Names : std::uint8_t
 };
 
 /// Bitset for individual mulivector elements
-enum class Values : std::uint16_t
+enum class Values : Elems
 {
     // Vector : corresponds to Plane
     kE1 = 1U << uint16_t(E1),

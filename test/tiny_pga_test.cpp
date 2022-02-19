@@ -111,21 +111,39 @@ TEST_F(PgaTest, PlaneTest)
     auto p_all = p_0 + p_dual;
 }
 
+TEST_F(PgaTest, BasisElementsTest)
+{
+    using namespace float_basis;
+    auto E01 = e0 * e1;
+    EXPECT_EQ(E01.Elements, e01.Elements);
+}
+
 TEST(BasicTest, RotorTest)
 {
-    RotorF R{0.8F, .2F, .3F, .4F};
-    PointF p{1.f, 2.f, 3.f, 4.F};
+    using namespace float_basis;
+    // Elements of the even subalgebra (scalar + bivector + pss) of unit length are motors
+    auto rot = Rotor(float(M_PI) / 2.0f, LineF(e1 * e2));
 
-    // rotated point
-    auto p2 = R * p * ~R;
+    // The outer product ^ is the MEET. Here we intersect the yz (x=0) and xz (y=0) planes.
+    auto ax_z = e1 ^ e2;
 
-    // rotated back
-    auto p3 = ~R * p2 * R;
+    // line and plane meet in point. We intersect the line along the z-axis (x=0,y=0) with the xy (z=0) plane.
+    auto orig = ax_z ^ e3;
 
-    //    EXPECT_NEAR(p[E021], p3[E021], 1e-5);
-    //    EXPECT_NEAR(p[E013], p3[E013], 1e-5);
-    //    EXPECT_NEAR(p[E032], p3[E032], 1e-5);
-    //    EXPECT_NEAR(p[E123], p3[E123], 1e-5);
+    // We can also easily create points and join them into a line using the regressive (vee, &) product.
+    auto px = Point(1.f, 0.f, 0.f);
+    auto line = orig & px;
+
+    // Lets also create the plane with equation 2x + z - 3 = 0
+    auto p = Plane(2.f, 0.f, 1.f, -3.f);
+
+    // rotations work on all elements
+    auto rotated_plane = rot * p * ~rot;
+    auto rotated_line = rot * line * ~rot;
+    auto rotated_point = rot * px * ~rot;
+
+    // See the 3D PGA Cheat sheet for a huge collection of useful formulas
+    auto point_on_plane = (p | px) * p;
 }
 
 // Check if geometric product rule (A*B = A|B + A^B) holds for vectors
